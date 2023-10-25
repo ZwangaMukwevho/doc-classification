@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	"golang.org/x/oauth2"
+	"google.golang.org/api/gmail/v1"
 )
 
 // Request a token from the web, then returns the retrieved token.
@@ -49,4 +51,52 @@ func SaveToken(path string, token *oauth2.Token) {
 	}
 	defer f.Close()
 	json.NewEncoder(f).Encode(token)
+}
+
+func GetAttachmentArray(client *http.Client, user string, query string, service *gmail.Service) {
+
+	messages, err := service.Users.Messages.List(user).Q(query).Do()
+	if err != nil {
+		log.Fatalf("Unable to retrieve unread messages: %v", err)
+	}
+
+	// Loop through all the messages array
+	for _, message := range messages.Messages {
+		msg, err := service.Users.Messages.Get(user, message.Id).Do()
+		if err != nil {
+			log.Printf("Unable to retrieve message details: %v", err)
+			continue
+		}
+		headers := msg.Payload.Headers
+		msg_id := message.Id
+		timestamp := ""
+		fmt.Printf("- %s\n:", msg_id)
+		for _, header := range headers {
+
+			if header.Name == "Date" {
+				timestamp = header.Value
+			}
+
+			if header.Name == "Subject" {
+				fmt.Printf("Timestamp: %s\n", timestamp)
+				fmt.Printf("- Subject: %s\n", header)
+				break
+			}
+		}
+
+		// Check for attachments
+		parts := msg.Payload.Parts
+		if parts != nil {
+			for _, part := range parts {
+				if part.Filename != "" {
+					attachmentID := part.Body.AttachmentId
+					if attachmentID != "" {
+						attachmentLink := fmt.Sprintf("https://mail.google.com/mail/u/0?ik=YOUR_USER_ID&attid=%s", attachmentID)
+						fmt.Printf("  - Attachment Link: %s\n", attachmentLink)
+					}
+					fmt.Printf("  - Attachment Filename: %s\n", part.Filename)
+				}
+			}
+		}
+	}
 }
