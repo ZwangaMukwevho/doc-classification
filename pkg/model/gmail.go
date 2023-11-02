@@ -2,10 +2,14 @@ package model
 
 type Attachment struct {
 	ID         string
-	Bytestream byte
+	Name       string
+	Bytestream string
+	MimeType   string
 }
 
 type Message struct {
-	ID     string
-	Header string
+	ID        string
+	Subject   string
+	Timestamp string
+	File      Attachment
 }

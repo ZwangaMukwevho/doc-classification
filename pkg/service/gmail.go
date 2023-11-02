@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"doc-classification/pkg/model"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -53,33 +54,39 @@ func SaveToken(path string, token *oauth2.Token) {
 	json.NewEncoder(f).Encode(token)
 }
 
-func GetAttachmentArray(client *http.Client, user string, query string, service *gmail.Service) {
-
+func GetAttachmentArray(client *http.Client, user string, query string, service *gmail.Service) (*[]model.Message, error) {
 	messages, err := service.Users.Messages.List(user).Q(query).Do()
 	if err != nil {
 		log.Fatalf("Unable to retrieve unread messages: %v", err)
+		return nil, err
 	}
+
+	// Initialise variables
+	var messagesArray []model.Message
+	var attachment model.Attachment
+	var messageStruct model.Message
 
 	// Loop through all the messages array
 	for _, message := range messages.Messages {
+
+		// Get messages
 		msg, err := service.Users.Messages.Get(user, message.Id).Do()
 		if err != nil {
 			log.Printf("Unable to retrieve message details: %v", err)
 			continue
 		}
+
 		headers := msg.Payload.Headers
-		msg_id := message.Id
 		timestamp := ""
-		fmt.Printf("- %s\n:", msg_id)
 		for _, header := range headers {
 
 			if header.Name == "Date" {
 				timestamp = header.Value
+				messageStruct.Timestamp = timestamp
 			}
 
 			if header.Name == "Subject" {
-				fmt.Printf("Timestamp: %s\n", timestamp)
-				fmt.Printf("- Subject: %s\n", header)
+				messageStruct.Subject = header.Value
 				break
 			}
 		}
@@ -90,13 +97,25 @@ func GetAttachmentArray(client *http.Client, user string, query string, service 
 			for _, part := range parts {
 				if part.Filename != "" {
 					attachmentID := part.Body.AttachmentId
+					attachment.ID = attachmentID
+					attachment.Name = part.Filename
+
+					// Get the attachment Bytestream
 					if attachmentID != "" {
-						attachmentLink := fmt.Sprintf("https://mail.google.com/mail/u/0?ik=YOUR_USER_ID&attid=%s", attachmentID)
-						fmt.Printf("  - Attachment Link: %s\n", attachmentLink)
+						attachmentData, err := service.Users.Messages.Attachments.Get(user, message.Id, attachmentID).Do()
+						attachment.Bytestream = attachmentData.Data
+						if err != nil {
+							log.Printf("Unable to retrieve attachment content: %v", err)
+							continue
+						}
 					}
-					fmt.Printf("  - Attachment Filename: %s\n", part.Filename)
 				}
+				attachment.MimeType = part.MimeType
 			}
 		}
+
+		messageStruct.File = attachment
+		messagesArray = append(messagesArray, messageStruct)
 	}
+	return &messagesArray, nil
 }
