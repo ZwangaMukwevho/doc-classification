@@ -59,42 +59,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)
 	}
-	r, err1 := driveSrv.Files.List().PageSize(10).Fields("files(id, name)").Do()
-	if err1 != nil {
-		log.Fatalf("Unable to retrieve files: %v", err)
-	}
 
-	// fmt.Println("Files:")
-	// fmt.Println(r)
-	if len(r.Files) == 0 {
-		fmt.Println("No files found.")
-	} else {
-		for _, i := range r.Files {
-			fmt.Printf("%s (%s)\n", i.Name, i.Id)
-		}
-	}
-
+	localDriveService := service.DriveServiceLocal{Service: driveSrv}
 	attachment1 := *messagesArray
-	//mimeType := common.GetMimeType(attachment1[0].File.Name)
-	fmt.Println("mime type")
-	fmt.Println(attachment1[0].File.MimeType)
-	// targetDirectoryID := "test"
-	// file := &drive.File{
-	// 	Name:     attachment1[0].File.Name,
-	// 	MimeType: attachment1[0].File.MimeType,
-	// 	Parents:  []string{"test_dir"},
-	// }
-
-	// // Decode the base64url data
-	// data, err := base64.RawURLEncoding.DecodeString(attachment1[0].File.Bytestream)
-	// if err != nil {
-	// 	log.Fatalf("Error decoding base64url data: %v", err)
-	// }
-
-	// _, err = driveSrv.Files.Create(file).Media(bytes.NewReader((data))).Do()
-	// if err != nil {
-	// 	log.Fatalf("Unable to create file: %v", err)
-	// }
-	// fmt.Printf("File '%s' uploaded to the specified directory in Google Drive.\n", attachment1[0].File.Name)
-
+	err = localDriveService.UploadFile(attachment1[0])
 }
