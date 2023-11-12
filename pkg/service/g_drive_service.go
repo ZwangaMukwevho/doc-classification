@@ -73,7 +73,7 @@ func (ds DriveServiceLocal) UploadFile(message model.Message) error {
 	}
 
 	// Decode the base64url data
-	data, err := base64.RawURLEncoding.DecodeString(message.File.Bytestream)
+	data, err := base64.URLEncoding.DecodeString(message.File.Bytestream)
 	if err != nil {
 		log.Printf("Error decoding base64url data: %v", err)
 		return err

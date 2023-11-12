@@ -104,6 +104,7 @@ func GetAttachmentArray(client *http.Client, user string, query string, service 
 					if attachmentID != "" {
 						attachmentData, err := service.Users.Messages.Attachments.Get(user, message.Id, attachmentID).Do()
 						attachment.Bytestream = attachmentData.Data
+						attachment.Size = attachmentData.Size
 						if err != nil {
 							log.Printf("Unable to retrieve attachment content: %v", err)
 							continue

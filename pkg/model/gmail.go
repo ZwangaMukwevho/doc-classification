@@ -5,6 +5,7 @@ type Attachment struct {
 	Name       string
 	Bytestream string
 	MimeType   string
+	Size       int64
 }
 
 type Message struct {
