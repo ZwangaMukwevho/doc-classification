@@ -64,12 +64,12 @@ func (ds DriveServiceLocal) ListFiles(size int64) *[]model.File {
 	return &files
 }
 
-func (ds DriveServiceLocal) UploadFile(message model.Message) error {
+func (ds DriveServiceLocal) UploadFile(message model.Message, directoryID string) error {
 	// create file object
 	file := &drive.File{
 		Name:     message.File.Name,
 		MimeType: message.File.MimeType,
-		Parents:  []string{"1pnPxqxkYwH2AZ7vp4PZQCWsAjveVZJ4H"},
+		Parents:  []string{directoryID},
 	}
 
 	// Decode the base64url data

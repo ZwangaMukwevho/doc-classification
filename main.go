@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"doc-classification/pkg/common"
+	"doc-classification/pkg/gateway"
 	"doc-classification/pkg/resource"
 	"doc-classification/pkg/service"
 	"fmt"
@@ -17,6 +19,21 @@ import (
 )
 
 func main() {
+
+	// Load environment variables
+	// Load environment variables from .env file
+	if err := godotenv.Load(); err != nil {
+		fmt.Println("Error loading .env file")
+		return
+	}
+
+	// Read API key from environment variable
+	apiKey := os.Getenv("OPENAI_API_KEY")
+	if apiKey == "" {
+		fmt.Println("API key is missing. Set the OPENAI_API_KEY environment variable.")
+		return
+	}
+
 	ctx := context.Background()
 	b, err := os.ReadFile("client_secret_973692223612-28ae9a7njdsfh7gv89l0fih5q36jt52m.apps.googleusercontent.com.json")
 	if err != nil {
@@ -60,47 +77,50 @@ func main() {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)
 	}
 
+	//localDriveService := service.DriveServiceLocal{Service: driveSrv}
 	localDriveService := service.DriveServiceLocal{Service: driveSrv}
 	attachment1 := *messagesArray
 
-	for i, a := range attachment1 {
+	// Get the file directories and ID's
+	directories, fileErr := common.ReadJsonFile("pkg/common/directories.json")
+	if fileErr != nil {
+		log.Panicf("Error reading file directories %v: ", *fileErr)
+	}
 
-		// if i == 1 {
-		fmt.Printf("file name %d: ", i)
-		fmt.Println(a.File.Name)
-		fmt.Println(a.File.Size)
+	for _, a := range attachment1 {
+		// Create the classification prompt
+		classificationQuestion := service.CreateClassifyEmailPrompt(a)
+		classificationPrompt := service.CreateSubsequentPrompt(classificationQuestion)
 
-		err = localDriveService.UploadFile(a)
+		// Send the classification request
+		classificationResponse, err := gateway.SendCompletionRequest(classificationPrompt, apiKey)
 		if err != nil {
-			fmt.Printf("error uploading file %v \n", err)
+			log.Fatalf("Error sending classification request to openai with : %v", err)
 		}
 
-		// Specify the file path
-		// filePath := "output.txt"
-		// // Write the string to the file
-		// _ = ioutil.WriteFile(filePath, []byte(a.File.Bytestream), 0644)
-		// fmt.Printf("mime type %v \n", a.File.MimeType)
-		// }
+		fmt.Println("file info")
+		fmt.Printf("email subject name: %s , email attachment name: %s \n", a.Subject, a.File.Name)
 
+		if classificationResponse != nil {
+			oneWordResponse, err1 := service.ExtractOpenAIContent(*classificationResponse)
+			if err1 != nil {
+				log.Print("Error extracting response from")
+			}
+
+			fmt.Printf("Formatted string: %s \n", *oneWordResponse)
+			driveDirID, err := common.FindDirectoryByID(*directories, *oneWordResponse)
+			if err != nil {
+				log.Fatalf("Error getting corresponding google drive id locally : %v", err)
+			}
+			fmt.Printf("Corresponding file id: %s \n", *driveDirID)
+
+			// Finally upload file
+			driveUploadErr := localDriveService.UploadFile(a, *driveDirID)
+			if driveUploadErr != nil {
+				fmt.Printf("error uploading file %v \n", err)
+			}
+
+		}
 	}
-	//err = localDriveService.UploadFile(attachment1[0])
 
-	// Load environment variables from .env file
-	if err := godotenv.Load(); err != nil {
-		fmt.Println("Error loading .env file")
-		return
-	}
-
-	// Read API key from environment variable
-	apiKey := os.Getenv("OPENAI_API_KEY")
-	if apiKey == "" {
-		fmt.Println("API key is missing. Set the OPENAI_API_KEY environment variable.")
-		return
-	}
-
-	// response, err := gateway.SendCompletionRequest("test", apiKey)
-	// if err != nil {
-	// 	fmt.Printf("error %v: ", err)
-	// }
-	// fmt.Println("Response:", *response)
 }

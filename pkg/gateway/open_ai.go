@@ -6,18 +6,25 @@ import (
 	"net/http"
 )
 
-func SendCompletionRequest(requestBodyTest string, apiKey string) (*string, error) {
+func SendCompletionRequest(userRequestBody string, apiKey string) (*string, error) {
 	apiUrl := "https://api.openai.com/v1/chat/completions"
 
 	// Request payload
-	// Request payload
-	requestBody := `{
-        "model": "gpt-3.5-turbo",
-        "messages": [
-            {"role": "system", "content": "You are a document classification assistant. I have categories I want to classify my email documents which are: 1. Education: This category can include documents related to educational pursuits, such as school transcripts, certificates, course materials, and research papers. 2. Finance: Finance-related documents can cover a wide range of items, including bank statements, tax records, invoices, quotes, receipts, and investment reports. 5. Work: Work-related documents can involve project plans, reports, emails, resumes, and other materials directly related to your professional life. 6. Home: Home category files may include property documents, utility bills, home maintenance records, and household inventory. 7. Personal: This category can cover a wide range of personal documents, from family photos to personal notes, travel itineraries, and more. Give your reply as one word answer from the given categories"},
-            {"role": "user", "content": "How can you classify attachment from an email with subject 'Quotation:21026480' and attachment name: 'Vehicle Booking Acceptance form ref::2102648'"}
-        ]
-    }`
+	// requestBody := `{
+	//     "model": "gpt-3.5-turbo",
+	//     "messages": [
+	//         {"role": "system", "content": "You are a document classification assistant. I have categories I want to classify my email documents which are: 1. Education: This category can include documents related to educational pursuits, such as school transcripts, certificates, course materials, and research papers. 2. Finance: Finance-related documents can cover a wide range of items, including bank statements, tax records, invoices, quotes, receipts, and investment reports. 5. Work: Work-related documents can involve project plans, reports, emails, resumes, and other materials directly related to your professional life. 6. Home: Home category files may include property documents, utility bills, home maintenance records, and household inventory. 7. Personal: This category can cover a wide range of personal documents, from family photos to personal notes, travel itineraries, and more. Give your reply as one word answer from the given categories"},
+	//         {"role": "user", "content": "How can you classify attachment from an email with subject 'Quotation:21026480' and attachment name: 'Vehicle Booking Acceptance form ref::2102648'"}
+	//     ]
+	// }`
+
+	requestBody := fmt.Sprintf(`{
+	    "model": "gpt-3.5-turbo",
+	    "messages": [
+	        {"role": "system", "content": "You are a document classification assistant. I have categories I want to classify my email documents which are: 1. Education: This category can include documents related to educational pursuits, such as school transcripts, certificates, course materials, and research papers. 2. Finance: Finance-related documents can cover a wide range of items, including bank statements, tax records, invoices, quotes, receipts, and investment reports. 5. Work: Work-related documents can involve project plans, reports, emails, resumes, and other materials directly related to your professional life. 6. Home: Home category files may include property documents, utility bills, home maintenance records, and household inventory. 7. Personal: This category can cover a wide range of personal documents, from family photos to personal notes, travel itineraries, and more. Give your reply as one word answer from the given categories"},
+	        %s
+	    ]
+	}`, userRequestBody)
 
 	// Create a request
 	req, err := http.NewRequest("POST", apiUrl, bytes.NewBufferString(requestBody))
