@@ -12,5 +12,5 @@ type Message struct {
 	ID        string
 	Subject   string
 	Timestamp string
-	File      Attachment
+	Files     []Attachment
 }

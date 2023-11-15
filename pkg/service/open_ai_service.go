@@ -8,11 +8,10 @@ import (
 	"fmt"
 )
 
-func CreateClassifyEmailPrompt(message model.Message) string {
-	emailSubject := message.Subject
-	attachmentName := message.File.Name
+func CreateClassifyEmailPrompt(subject string, attachment model.Attachment) string {
+	attachmentName := attachment.Name
 
-	formattedMessage := fmt.Sprintf("From the above categories, how can you classify an attachment from an email with subject '%s' and attachment name: '%s' ", emailSubject, attachmentName)
+	formattedMessage := fmt.Sprintf("From the above categories, how can you classify an attachment from an email with subject '%s' and attachment name: '%s' ", subject, attachmentName)
 	return formattedMessage
 }
 

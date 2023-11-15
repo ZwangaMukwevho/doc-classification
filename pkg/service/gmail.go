@@ -63,7 +63,6 @@ func GetAttachmentArray(client *http.Client, user string, query string, service 
 
 	// Initialise variables
 	var messagesArray []model.Message
-	var attachment model.Attachment
 	var messageStruct model.Message
 
 	// Loop through all the messages array
@@ -93,29 +92,40 @@ func GetAttachmentArray(client *http.Client, user string, query string, service 
 
 		// Check for attachments
 		parts := msg.Payload.Parts
+		var attachments []model.Attachment
+
 		if parts != nil {
 			for _, part := range parts {
 				if part.Filename != "" {
 					attachmentID := part.Body.AttachmentId
-					attachment.ID = attachmentID
-					attachment.Name = part.Filename
-
+					// attachment.ID = attachmentID
+					// attachment.Name = part.Filename
 					// Get the attachment Bytestream
 					if attachmentID != "" {
 						attachmentData, err := service.Users.Messages.Attachments.Get(user, message.Id, attachmentID).Do()
-						attachment.Bytestream = attachmentData.Data
-						attachment.Size = attachmentData.Size
 						if err != nil {
 							log.Printf("Unable to retrieve attachment content: %v", err)
 							continue
 						}
+
+						attachment := model.Attachment{
+							ID:         attachmentID,
+							Name:       part.Filename,
+							MimeType:   part.MimeType,
+							Bytestream: attachmentData.Data,
+							Size:       attachmentData.Size,
+						}
+
+						attachments = append(attachments, attachment)
+						// attachment.Bytestream = attachmentData.Data
+						// attachment.Size = attachmentData.Size
 					}
 				}
-				attachment.MimeType = part.MimeType
+				// attachment.MimeType = part.MimeType
 			}
 		}
 
-		messageStruct.File = attachment
+		messageStruct.Files = attachments
 		messagesArray = append(messagesArray, messageStruct)
 	}
 	return &messagesArray, nil

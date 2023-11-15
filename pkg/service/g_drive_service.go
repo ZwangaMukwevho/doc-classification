@@ -64,16 +64,16 @@ func (ds DriveServiceLocal) ListFiles(size int64) *[]model.File {
 	return &files
 }
 
-func (ds DriveServiceLocal) UploadFile(message model.Message, directoryID string) error {
+func (ds DriveServiceLocal) UploadFile(attachment model.Attachment, directoryID string) error {
 	// create file object
 	file := &drive.File{
-		Name:     message.File.Name,
-		MimeType: message.File.MimeType,
+		Name:     attachment.Name,
+		MimeType: attachment.MimeType,
 		Parents:  []string{directoryID},
 	}
 
 	// Decode the base64url data
-	data, err := base64.URLEncoding.DecodeString(message.File.Bytestream)
+	data, err := base64.URLEncoding.DecodeString(attachment.Bytestream)
 	if err != nil {
 		log.Printf("Error decoding base64url data: %v", err)
 		return err
@@ -85,6 +85,6 @@ func (ds DriveServiceLocal) UploadFile(message model.Message, directoryID string
 		log.Printf("Unable to create file: %v", err)
 		return err
 	}
-	fmt.Printf("File '%s' uploaded to the specified directory in Google Drive.\n", message.File.Name)
+	fmt.Printf("File '%s' uploaded to the specified directory in Google Drive.\n", attachment.Name)
 	return nil
 }

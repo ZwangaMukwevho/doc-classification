@@ -65,6 +65,7 @@ func main() {
 	if err != nil {
 		log.Print("error getting the attachments")
 	}
+	dereferencedMessageArr := *messagesArray
 
 	// Google drive setup
 	driveConfig, err := google.ConfigFromJSON(b, drive.DriveScope)
@@ -76,10 +77,14 @@ func main() {
 	if err != nil {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)
 	}
-
-	//localDriveService := service.DriveServiceLocal{Service: driveSrv}
 	localDriveService := service.DriveServiceLocal{Service: driveSrv}
-	attachment1 := *messagesArray
+
+	/*
+		Purposefully comment out the below code
+		Only uncomment when you want to get the directory ID's from your google drive
+		Only needed this while setting up the directories.json file
+	*/
+	//dirId, err := localDriveService.GetDriveDirectories()
 
 	// Get the file directories and ID's
 	directories, fileErr := common.ReadJsonFile("pkg/common/directories.json")
@@ -87,39 +92,42 @@ func main() {
 		log.Panicf("Error reading file directories %v: ", *fileErr)
 	}
 
-	for _, a := range attachment1 {
+	for _, message := range dereferencedMessageArr {
 		// Create the classification prompt
-		classificationQuestion := service.CreateClassifyEmailPrompt(a)
-		classificationPrompt := service.CreateSubsequentPrompt(classificationQuestion)
+		subject := message.Subject
+		for _, attachment := range message.Files {
+			classificationQuestion := service.CreateClassifyEmailPrompt(subject, attachment)
+			classificationPrompt := service.CreateSubsequentPrompt(classificationQuestion)
 
-		// Send the classification request
-		classificationResponse, err := gateway.SendCompletionRequest(classificationPrompt, apiKey)
-		if err != nil {
-			log.Fatalf("Error sending classification request to openai with : %v", err)
-		}
-
-		fmt.Println("file info")
-		fmt.Printf("email subject name: %s , email attachment name: %s \n", a.Subject, a.File.Name)
-
-		if classificationResponse != nil {
-			oneWordResponse, err1 := service.ExtractOpenAIContent(*classificationResponse)
-			if err1 != nil {
-				log.Print("Error extracting response from")
-			}
-
-			fmt.Printf("Formatted string: %s \n", *oneWordResponse)
-			driveDirID, err := common.FindDirectoryByID(*directories, *oneWordResponse)
+			// Send the classification request
+			classificationResponse, err := gateway.SendCompletionRequest(classificationPrompt, apiKey)
 			if err != nil {
-				log.Fatalf("Error getting corresponding google drive id locally : %v", err)
-			}
-			fmt.Printf("Corresponding file id: %s \n", *driveDirID)
-
-			// Finally upload file
-			driveUploadErr := localDriveService.UploadFile(a, *driveDirID)
-			if driveUploadErr != nil {
-				fmt.Printf("error uploading file %v \n", err)
+				log.Fatalf("Error sending classification request to openai with : %v", err)
 			}
 
+			fmt.Println("file info")
+			fmt.Printf("email subject name: %s , email attachment name: %s \n", message.Subject, attachment.Name)
+
+			if classificationResponse != nil {
+				oneWordResponse, err1 := service.ExtractOpenAIContent(*classificationResponse)
+				if err1 != nil {
+					log.Print("Error extracting response from")
+				}
+
+				fmt.Printf("Formatted string: %s \n", *oneWordResponse)
+				driveDirID, err := common.FindDirectoryByID(*directories, *oneWordResponse)
+				if err != nil {
+					log.Fatalf("Error getting corresponding google drive id locally : %v", err)
+				}
+				fmt.Printf("Corresponding file id: %s \n", *driveDirID)
+
+				// Finally upload file
+				driveUploadErr := localDriveService.UploadFile(attachment, *driveDirID)
+				if driveUploadErr != nil {
+					fmt.Printf("error uploading file %v \n", err)
+				}
+
+			}
 		}
 	}
 
