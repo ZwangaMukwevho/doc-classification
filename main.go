@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/robfig/cron/v3"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/gmail/v1"
@@ -22,6 +23,12 @@ func main() {
 
 	// Load environment variables
 	// Load environment variables from .env file
+	setupCron()
+}
+
+func cronJob() {
+	fmt.Println("Cron job is running at:", time.Now())
+	// Add your cron job logic here
 	if err := godotenv.Load(); err != nil {
 		fmt.Println("Error loading .env file")
 		return
@@ -57,7 +64,7 @@ func main() {
 	// Setting up the user and the time stamp
 	user := "me"
 	currentTime := time.Now()
-	yesterday := currentTime.AddDate(0, 0, -10)
+	yesterday := currentTime.AddDate(0, 0, -1)
 	timestampTest := yesterday.Format("2006/01/02")
 	query := fmt.Sprintf("in:inbox category:primary has:attachment after:%s -from:no-reply@sixty60.co.za", timestampTest)
 
@@ -131,4 +138,25 @@ func main() {
 		}
 	}
 
+}
+
+func myCronJob() {
+	fmt.Println("Cron job executed at:", time.Now())
+	// Add your specific logic here
+}
+
+func setupCron() {
+	c := cron.New()
+
+	// Schedule the job to run every minute
+	_, err := c.AddFunc("* * * * *", myCronJob)
+	if err != nil {
+		fmt.Println("Error scheduling cron job:", err)
+		return
+	}
+
+	c.Start()
+
+	// Run the cron scheduler in the background
+	select {}
 }
