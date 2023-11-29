@@ -144,7 +144,7 @@ func setupCron() {
 	c := cron.New()
 
 	// Schedule the job to run every minute
-	_, err := c.AddFunc("0 0 * * *", cronJob)
+	_, err := c.AddFunc("* * * * *", cronJob)
 	if err != nil {
 		fmt.Println("Error scheduling cron job:", err)
 		return
