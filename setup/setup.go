@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/joho/godotenv"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/gmail/v1"
@@ -23,10 +24,21 @@ import (
 // dirId, err := localDriveService.GetDriveDirectories()
 
 func main() {
-	ctx := context.Background()
-	oAuthFileName := "client_secret_973692223612-28ae9a7njdsfh7gv89l0fih5q36jt52m.apps.googleusercontent.com.json"
+	// Add your cron job logic here
+	if err := godotenv.Load(); err != nil {
+		fmt.Println("Error loading .env file")
+		return
+	}
 
-	b, err := os.ReadFile(oAuthFileName)
+	// Read API key from environment variable
+	gDriveTokenFile := os.Getenv("G_DRIVE_TOKEN_FILE")
+	gmailTokenFile := os.Getenv("GMAIL_TOKEN_FILE")
+	oAuthFileName := os.Getenv("GOOGLE_AUTH_FILE")
+
+	ctx := context.Background()
+	oAuthFileRelative := "../" + oAuthFileName
+
+	b, err := os.ReadFile(oAuthFileRelative)
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}
@@ -36,14 +48,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
-	resource.GetClient(gmailConfig, "token_gmail.json")
+	gmailTokenRelativePath := "../" + gmailTokenFile
+	resource.GetClient(gmailConfig, gmailTokenRelativePath)
 
 	// Google drive setup
 	driveConfig, err := google.ConfigFromJSON(b, drive.DriveScope)
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
-	driveClient := resource.GetClient(driveConfig, "token_g_drive.json")
+
+	gdriveTokenFileRelativePath := "../" + gDriveTokenFile
+	driveClient := resource.GetClient(driveConfig, gdriveTokenFileRelativePath)
 	driveSrv, err := drive.NewService(ctx, option.WithHTTPClient(driveClient))
 	if err != nil {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)
@@ -60,7 +75,7 @@ func main() {
 	dirId, err := localDriveService.GetDriveDirectories()
 	fmt.Println(dirId)
 
-	file, err := os.Create("output.json")
+	file, err := os.Create("../pkg/common/directories.json")
 	if err != nil {
 		fmt.Println("Error creating file:", err)
 		return
