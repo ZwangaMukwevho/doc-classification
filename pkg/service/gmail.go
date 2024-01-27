@@ -39,7 +39,16 @@ func TokenFromFile(file string) (*oauth2.Token, error) {
 	}
 	defer f.Close()
 	tok := &oauth2.Token{}
+
+	if !tok.Valid() {  // check if the token is expired
+		return nil, errors.New("token is expired")
+	}
+	
 	err = json.NewDecoder(f).Decode(tok)
+	if err != nil {
+		return nil, err
+	}
+	
 	return tok, err
 }
 

@@ -15,9 +15,26 @@ func GetClient(config *oauth2.Config, tokenFile string) *http.Client {
 
 	tokFile := tokenFile //TO-DO: have a unique one for each user
 	tok, err := service.TokenFromFile(tokFile)
+
+
 	if err != nil {
-		tok = service.GetTokenFromWeb(config)
-		service.SaveToken(tokFile, tok)
+
+		if err.Error() == "token is expired" { // if the token is expired
+			// fetch a new token using the refresh token
+			ctx := context.Background()
+			tokenSource := config.TokenSource(ctx, tok)
+			newToken, err := tokenSource.Token()
+			if err != nil {
+				log.Fatal(err)
+			}
+			// persist the new token
+			service.SaveToken(tokFile, newToken)
+			// use the new token
+			tok = newToken  // set the expired token to the new token
+		} else {
+			tok = service.GetTokenFromWeb(config)
+			service.SaveToken(tokFile, tok)
+		}
 	}
 	return config.Client(context.Background(), tok)
 }
