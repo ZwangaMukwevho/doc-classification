@@ -3,6 +3,7 @@ package resource
 import (
 	"context"
 	"doc-classification/pkg/service"
+	"log"
 	"net/http"
 
 	"golang.org/x/oauth2"
@@ -15,7 +16,6 @@ func GetClient(config *oauth2.Config, tokenFile string) *http.Client {
 
 	tokFile := tokenFile //TO-DO: have a unique one for each user
 	tok, err := service.TokenFromFile(tokFile)
-
 
 	if err != nil {
 
@@ -30,7 +30,7 @@ func GetClient(config *oauth2.Config, tokenFile string) *http.Client {
 			// persist the new token
 			service.SaveToken(tokFile, newToken)
 			// use the new token
-			tok = newToken  // set the expired token to the new token
+			tok = newToken // set the expired token to the new token
 		} else {
 			tok = service.GetTokenFromWeb(config)
 			service.SaveToken(tokFile, tok)
