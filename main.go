@@ -4,7 +4,6 @@ import (
 	"context"
 	"doc-classification/pkg/common"
 	"doc-classification/pkg/gateway"
-	"doc-classification/pkg/resource"
 	"doc-classification/pkg/service"
 	"fmt"
 	"log"
@@ -53,7 +52,7 @@ func cronJob() {
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
-	gmailClient := resource.GetClient(gmailConfig, "token_gmail.json")
+	gmailClient := common.GetClient(gmailConfig, "token_gmail.json")
 
 	// initialise the gmail service
 	srv, err := gmail.NewService(ctx, option.WithHTTPClient(gmailClient))
@@ -79,7 +78,7 @@ func cronJob() {
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
-	driveClient := resource.GetClient(driveConfig, "token_g_drive.json")
+	driveClient := common.GetClient(driveConfig, "token_g_drive.json")
 	driveSrv, err := drive.NewService(ctx, option.WithHTTPClient(driveClient))
 	if err != nil {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)
@@ -146,7 +145,8 @@ func setupCron() {
 	// Schedule the job to run every minute
 	// */3 * * * * fixing
 	// 0 0 * * * normal
-	_, err := c.AddFunc("0 0 * * *", cronJob)
+	fmt.Println("running")
+	_, err := c.AddFunc("*0 0 * * *", cronJob)
 	if err != nil {
 		fmt.Println("Error scheduling cron job:", err)
 		return
