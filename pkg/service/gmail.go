@@ -36,18 +36,18 @@ func GetTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 func TokenFromFile(file string) (*oauth2.Token, error) {
 	f, err := os.Open(file)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("Token file not found")
 	}
 	defer f.Close()
 	tok := &oauth2.Token{}
 
-	if !tok.Valid() { // check if the token is expired
-		return nil, errors.New("token is expired")
-	}
-
 	err = json.NewDecoder(f).Decode(tok)
 	if err != nil {
 		return nil, err
+	}
+
+	if !tok.Valid() { // check if the token is expired
+		return nil, errors.New("token is expired")
 	}
 
 	return tok, err

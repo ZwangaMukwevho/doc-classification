@@ -25,3 +25,5 @@ go.work
 
 # environment vars
 .env
+
+main.go
