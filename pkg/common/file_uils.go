@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -71,4 +72,13 @@ func ReadJsonFile(jsonFilePath string) (*[]model.Directory, *error) {
 	}
 
 	return &directories, nil
+}
+
+func GetJsonFileByteStream(filePath string) (*[]byte, error) {
+	byteStream, err := os.ReadFile(filePath)
+	if err != nil {
+		log.Printf("Unable to read client secret file: %v", err)
+		return nil, err
+	}
+	return &byteStream, nil
 }

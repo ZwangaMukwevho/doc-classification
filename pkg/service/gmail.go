@@ -32,6 +32,11 @@ func GetTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 	return tok
 }
 
+func GetAuthCodeURL(config *oauth2.Config) string {
+	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
+	return authURL
+}
+
 // Retrieves a token from a local file.
 func TokenFromFile(file string) (*oauth2.Token, error) {
 	f, err := os.Open(file)

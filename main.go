@@ -4,6 +4,7 @@ import (
 	"context"
 	"doc-classification/pkg/common"
 	"doc-classification/pkg/gateway"
+	"doc-classification/pkg/resource"
 	"doc-classification/pkg/service"
 	"fmt"
 	"log"
@@ -23,6 +24,13 @@ func main() {
 	// Load environment variables
 	// Load environment variables from .env file
 	setupCron()
+
+	basePath := "localhost:8080"
+	router := resource.NewRouter(
+		resource.Handler{},
+	)
+
+	router.Run(basePath)
 }
 
 func cronJob() {
