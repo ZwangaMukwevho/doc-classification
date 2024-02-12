@@ -1,18 +1,23 @@
 package resource
 
 import (
+	"context"
 	"doc-classification/pkg/common"
 	"doc-classification/pkg/service"
+	"fmt"
+	"log"
 	"net/http"
 
+	"firebase.google.com/go/db"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/gmail/v1"
 )
 
 type Handler struct {
 	// TO-DO: Implement Firebase client in repository
-	// FirebaseClient *db.Client
+	FirebaseClient *db.Client
 }
 
 // @Summary Get all words
@@ -36,7 +41,7 @@ func (h *Handler) initiateGmailAuth(c *gin.Context) {
 	}
 	authURL := service.GetAuthCodeURL(gmailConfig)
 
-	c.IndentedJSON(http.StatusOK, authURL)
+	c.String(http.StatusOK, authURL)
 }
 
 // @Summary Get all words
@@ -49,4 +54,44 @@ func (h *Handler) initiateGmailAuth(c *gin.Context) {
 func (h *Handler) initiateDriveAuth(c *gin.Context) {
 
 	c.IndentedJSON(http.StatusOK, "")
+}
+
+func (h *Handler) getGmailAuthKey(c *gin.Context) {
+	var authToken *oauth2.Token
+
+	ref := h.FirebaseClient.NewRef("users/testGmailKey")
+	fmt.Println("calling ref")
+	if err := ref.Get(context.Background(), &authToken); err != nil {
+		log.Print(err)
+		c.IndentedJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	// if !authToken.Valid() { // check if the token is expired
+	// 	log.Print("Token not valid")
+	// 	c.IndentedJSON(http.StatusInternalServerError, "token is expired")
+	// 	return
+	// }
+
+	c.IndentedJSON(http.StatusOK, authToken)
+}
+
+func (h *Handler) postGmailAuthCode(c *gin.Context) {
+	var authToken *oauth2.Token
+
+	ref := h.FirebaseClient.NewRef("users/testGmailKey")
+	fmt.Println("calling ref")
+	if err := ref.Get(context.Background(), &authToken); err != nil {
+		log.Print(err)
+		c.IndentedJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	// if !authToken.Valid() { // check if the token is expired
+	// 	log.Print("Token not valid")
+	// 	c.IndentedJSON(http.StatusInternalServerError, "token is expired")
+	// 	return
+	// }
+
+	c.IndentedJSON(http.StatusOK, authToken)
 }

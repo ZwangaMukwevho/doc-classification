@@ -4,6 +4,7 @@ import (
 	"context"
 	"doc-classification/pkg/common"
 	"doc-classification/pkg/gateway"
+	"doc-classification/pkg/repository"
 	"doc-classification/pkg/resource"
 	"doc-classification/pkg/service"
 	"fmt"
@@ -23,11 +24,18 @@ func main() {
 
 	// Load environment variables
 	// Load environment variables from .env file
-	setupCron()
+	go setupCron()
+
+	firebaseDB, err := repository.InitDB("https://react-getting-started-78f85-default-rtdb.firebaseio.com", "firebase_service.json")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	basePath := "localhost:8080"
 	router := resource.NewRouter(
-		resource.Handler{},
+		resource.Handler{
+			FirebaseClient: firebaseDB,
+		},
 	)
 
 	router.Run(basePath)
@@ -154,7 +162,7 @@ func setupCron() {
 	// */3 * * * * fixing
 	// 0 0 * * * normal
 	fmt.Println("running")
-	_, err := c.AddFunc("*0 0 * * *", cronJob)
+	_, err := c.AddFunc("0 0 * * *", cronJob)
 	if err != nil {
 		fmt.Println("Error scheduling cron job:", err)
 		return
