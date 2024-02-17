@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/gmail/v1"
 )
 
@@ -40,6 +41,7 @@ func (h *Handler) initiateGmailAuth(c *gin.Context) {
 		return
 	}
 	authURL := service.GetAuthCodeURL(gmailConfig)
+	fmt.Println("auth url: ", authURL)
 
 	c.String(http.StatusOK, authURL)
 }
@@ -53,7 +55,21 @@ func (h *Handler) initiateGmailAuth(c *gin.Context) {
 // @Router /words [get]
 func (h *Handler) initiateDriveAuth(c *gin.Context) {
 
-	c.IndentedJSON(http.StatusOK, "")
+	oAuthByteStream, err := common.GetJsonFileByteStream("client_secret_973692223612-28ae9a7njdsfh7gv89l0fih5q36jt52m.apps.googleusercontent.com.json")
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, "error auth")
+		return
+	}
+
+	driveConfig, err := google.ConfigFromJSON(*oAuthByteStream, drive.DriveScope)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, "error auth")
+		return
+	}
+	authURL := service.GetAuthCodeURL(driveConfig)
+	fmt.Println("auth url: ", authURL)
+
+	c.String(http.StatusOK, authURL)
 }
 
 func (h *Handler) getGmailAuthKey(c *gin.Context) {
@@ -80,7 +96,6 @@ func (h *Handler) postGmailAuthCode(c *gin.Context) {
 	var authToken *oauth2.Token
 
 	ref := h.FirebaseClient.NewRef("users/testGmailKey")
-	fmt.Println("calling ref")
 	if err := ref.Get(context.Background(), &authToken); err != nil {
 		log.Print(err)
 		c.IndentedJSON(http.StatusInternalServerError, err)
