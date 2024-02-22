@@ -3,6 +3,8 @@ package resource
 import (
 	"context"
 	"doc-classification/pkg/common"
+	"doc-classification/pkg/model"
+	"doc-classification/pkg/repository"
 	"doc-classification/pkg/service"
 	"fmt"
 	"log"
@@ -18,7 +20,8 @@ import (
 
 type Handler struct {
 	// TO-DO: Implement Firebase client in repository
-	FirebaseClient *db.Client
+	FirebaseClient      *db.Client
+	FirebaseRespository repository.FirebaseRepository
 }
 
 // @Summary Get all words
@@ -109,4 +112,64 @@ func (h *Handler) postGmailAuthCode(c *gin.Context) {
 	// }
 
 	c.IndentedJSON(http.StatusOK, authToken)
+}
+
+func (h *Handler) createUser(c *gin.Context) {
+	var userData model.User
+
+	fmt.Println("createUser called")
+	if err := c.ShouldBindJSON(&userData); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, err)
+		return
+	}
+
+	fmt.Println("getting gdrive token")
+	gdriveToken, err := service.GetGdriveToken(userData.GmailCode)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	fmt.Println("getting gmail token")
+	gmailToken, err := service.GetGmailToken(userData.GmailCode)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	var firebaseUser = model.FirebaseUser{
+		UserId:     userData.UserId,
+		GmailCode:  gmailToken,
+		GdriveCode: gdriveToken,
+		Categories: userData.Categories,
+	}
+	fmt.Println("firebaseUser: ", firebaseUser)
+
+	h.FirebaseRespository.UploadUserData(firebaseUser)
+
+	c.IndentedJSON(http.StatusOK, "OK")
+}
+
+func (h *Handler) createGmailToken(c *gin.Context) {
+
+	var gmailCode model.Code
+
+	if err := c.ShouldBindJSON(&gmailCode); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, err)
+		return
+	}
+
+	config, err := service.GetGmailOauthConfig(gmail.GmailReadonlyScope)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	tok, err := service.GetTokenUsingAPI(config, gmailCode.CodeString)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, tok)
 }

@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"doc-classification/pkg/common"
+	"doc-classification/pkg/resource"
 	"doc-classification/pkg/service"
 	"encoding/json"
 	"fmt"
@@ -49,7 +49,7 @@ func main() {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
 	gmailTokenRelativePath := "../" + gmailTokenFile
-	common.GetClient(gmailConfig, gmailTokenRelativePath)
+	resource.GetClient(gmailConfig, gmailTokenRelativePath)
 
 	// Google drive setup
 	driveConfig, err := google.ConfigFromJSON(b, drive.DriveScope)
@@ -58,7 +58,7 @@ func main() {
 	}
 
 	gdriveTokenFileRelativePath := "../" + gDriveTokenFile
-	driveClient := common.GetClient(driveConfig, gdriveTokenFileRelativePath)
+	driveClient := resource.GetClient(driveConfig, gdriveTokenFileRelativePath)
 	driveSrv, err := drive.NewService(ctx, option.WithHTTPClient(driveClient))
 	if err != nil {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)

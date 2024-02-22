@@ -9,6 +9,8 @@ func NewRouter(handler Handler) *gin.Engine {
 	router.GET("/gdrive", handler.initiateDriveAuth)
 	router.GET("/gmail/authkey", handler.getGmailAuthKey)
 	router.POST("/gmail/authkey", handler.getGmailAuthKey)
+	router.POST("user/create", handler.createUser)
+	router.POST("token/create", handler.createGmailToken)
 
 	return router
 }

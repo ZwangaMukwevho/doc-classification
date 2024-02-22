@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"doc-classification/pkg/common"
 	"doc-classification/pkg/model"
 	"encoding/json"
 	"errors"
@@ -11,6 +12,7 @@ import (
 	"os"
 
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/api/gmail/v1"
 )
 
@@ -30,6 +32,15 @@ func GetTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 		log.Fatalf("Unable to retrieve token from web: %v", err)
 	}
 	return tok
+}
+
+func GetTokenUsingAPI(config *oauth2.Config, code string) (*oauth2.Token, error) {
+	tok, err := config.Exchange(context.TODO(), code)
+	if err != nil {
+		log.Printf("Unable to retrieve token from web: %v", err)
+		return nil, err
+	}
+	return tok, nil
 }
 
 func GetAuthCodeURL(config *oauth2.Config) string {
@@ -144,4 +155,32 @@ func GetAttachmentArray(client *http.Client, user string, query string, service 
 		messagesArray = append(messagesArray, messageStruct)
 	}
 	return &messagesArray, nil
+}
+
+func GetGmailOauthConfig(scope string) (*oauth2.Config, error) {
+	oAuthByteStream, err := common.GetJsonFileByteStream("client_secret_973692223612-28ae9a7njdsfh7gv89l0fih5q36jt52m.apps.googleusercontent.com.json")
+	if err != nil {
+		return nil, err
+	}
+
+	gmailConfig, err := google.ConfigFromJSON(*oAuthByteStream, scope)
+	if err != nil {
+		return nil, err
+	}
+
+	return gmailConfig, nil
+}
+
+func GetGmailToken(code string) (*oauth2.Token, error) {
+	config, err := GetGmailOauthConfig(gmail.GmailReadonlyScope)
+	if err != nil {
+		return nil, err
+	}
+
+	gmailToken, err := GetTokenUsingAPI(config, code)
+	if err != nil {
+		return nil, err
+	}
+
+	return gmailToken, nil
 }

@@ -14,3 +14,7 @@ type Message struct {
 	Timestamp string
 	Files     []Attachment
 }
+
+type Code struct {
+	CodeString string `json:"code"`
+}

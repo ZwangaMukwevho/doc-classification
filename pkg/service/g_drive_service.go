@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 
+	"golang.org/x/oauth2"
 	"google.golang.org/api/drive/v3"
 )
 
@@ -87,4 +88,18 @@ func (ds DriveServiceLocal) UploadFile(attachment model.Attachment, directoryID 
 	}
 	fmt.Printf("File '%s' uploaded to the specified directory in Google Drive.\n", attachment.Name)
 	return nil
+}
+
+func GetGdriveToken(code string) (*oauth2.Token, error) {
+	config, err := GetGmailOauthConfig(drive.DriveScope)
+	if err != nil {
+		return nil, err
+	}
+
+	gmailToken, err := GetTokenUsingAPI(config, code)
+	if err != nil {
+		return nil, err
+	}
+
+	return gmailToken, nil
 }

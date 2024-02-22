@@ -1,7 +1,7 @@
 package gateway
 
 import (
-	"doc-classification/pkg/common"
+	"doc-classification/pkg/resource"
 	"log"
 	"net/http"
 
@@ -16,6 +16,6 @@ func GetGmailClient(ouathFile *[]byte) *http.Client {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
 
-	gmailClient := common.GetClient(gmailConfig, "token_gmail.json")
+	gmailClient := resource.GetClient(gmailConfig, "token_gmail.json")
 	return gmailClient
 }

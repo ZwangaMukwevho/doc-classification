@@ -1,0 +1,17 @@
+package model
+
+import "golang.org/x/oauth2"
+
+type User struct {
+	UserId     string   `json:"userid"`
+	Categories []string `json:"categories"`
+	GmailCode  string   `json:"gmailCode"`
+	GdriveCode string   `json:"gdriveCode"`
+}
+
+type FirebaseUser struct {
+	UserId     string
+	Categories []string
+	GmailCode  *oauth2.Token
+	GdriveCode *oauth2.Token
+}

@@ -32,9 +32,13 @@ func main() {
 	}
 
 	basePath := "localhost:8080"
+
+	firebaseRepository := repository.NewFirebaseRestClient(firebaseDB)
+
 	router := resource.NewRouter(
 		resource.Handler{
-			FirebaseClient: firebaseDB,
+			FirebaseClient:      firebaseDB,
+			FirebaseRespository: firebaseRepository,
 		},
 	)
 
@@ -68,7 +72,7 @@ func cronJob() {
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
-	gmailClient := common.GetClient(gmailConfig, "token_gmail.json")
+	gmailClient := resource.GetClient(gmailConfig, "token_gmail.json")
 
 	// initialise the gmail service
 	srv, err := gmail.NewService(ctx, option.WithHTTPClient(gmailClient))
@@ -94,7 +98,7 @@ func cronJob() {
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
-	driveClient := common.GetClient(driveConfig, "token_g_drive.json")
+	driveClient := resource.GetClient(driveConfig, "token_g_drive.json")
 	driveSrv, err := drive.NewService(ctx, option.WithHTTPClient(driveClient))
 	if err != nil {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)
