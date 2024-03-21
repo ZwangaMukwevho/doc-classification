@@ -66,97 +66,116 @@ func cronJob() {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}
 
-	//If modifying these scopes, delete your previously saved token.json.
-	//Gmail Setup
-	gmailConfig, err := google.ConfigFromJSON(b, gmail.GmailReadonlyScope)
+	firebaseDB, err := repository.InitDB("https://react-getting-started-78f85-default-rtdb.firebaseio.com", "firebase_service.json")
 	if err != nil {
-		log.Fatalf("Unable to parse client secret file to config: %v", err)
+		log.Fatal(err)
 	}
-	gmailClient := resource.GetClient(gmailConfig, "token_gmail.json")
 
-	// initialise the gmail service
-	srv, err := gmail.NewService(ctx, option.WithHTTPClient(gmailClient))
+	// Getting user data with tokens from DB
+	firebaseRepository := repository.NewFirebaseRestClient(firebaseDB)
+	users, err := firebaseRepository.GetUserDataList()
 	if err != nil {
-		log.Fatalf("Unable to retrieve Gmail client: %v", err)
+		log.Fatal(err)
 	}
 
-	// Setting up the user and the time stamp
-	user := "me"
-	currentTime := time.Now()
-	yesterday := currentTime.AddDate(0, 0, -1)
-	timestampTest := yesterday.Format("2006/01/02")
-	query := fmt.Sprintf("in:inbox category:primary has:attachment after:%s -from:no-reply@sixty60.co.za", timestampTest)
+	for _, dbUserData := range *users {
+		gmailConfig, err := google.ConfigFromJSON(b, gmail.GmailReadonlyScope)
+		if err != nil {
+			log.Fatalf("Unable to parse client secret file to config: %v", err)
+		}
 
-	messagesArray, err := service.GetAttachmentArray(gmailClient, user, query, srv)
-	if err != nil {
-		log.Print("error getting the attachments")
-	}
-	dereferencedMessageArr := *messagesArray
+		gmailClient, err := resource.GetClientFromDBToken(gmailConfig, dbUserData.GmailCode, firebaseRepository, dbUserData.UserId)
+		if err != nil {
+			log.Fatalf("Unable to get gmail client: %v", err)
+		}
 
-	// Google drive setup
-	driveConfig, err := google.ConfigFromJSON(b, drive.DriveScope)
-	if err != nil {
-		log.Fatalf("Unable to parse client secret file to config: %v", err)
-	}
-	driveClient := resource.GetClient(driveConfig, "token_g_drive.json")
-	driveSrv, err := drive.NewService(ctx, option.WithHTTPClient(driveClient))
-	if err != nil {
-		log.Fatalf("Unable to retrieve Drive client: %v", err)
-	}
-	localDriveService := service.DriveServiceLocal{Service: driveSrv}
+		// initialise the gmail service
+		srv, err := gmail.NewService(ctx, option.WithHTTPClient(gmailClient))
+		if err != nil {
+			log.Fatalf("Unable to retrieve Gmail client: %v", err)
+		}
 
-	/*
-		Purposefully comment out the below code
-		Only uncomment when you want to get the directory ID's from your google drive
-		Only needed this while setting up the directories.json file
-	*/
-	//dirId, err := localDriveService.GetDriveDirectories()
+		// Setting up the user and the time stamp
+		user := "me"
+		currentTime := time.Now()
+		yesterday := currentTime.AddDate(0, 0, -15)
+		timestampTest := yesterday.Format("2006/01/02")
+		query := fmt.Sprintf("in:inbox category:primary has:attachment after:%s -from:no-reply@sixty60.co.za", timestampTest)
 
-	// Get the file directories and ID's
-	directories, fileErr := common.ReadJsonFile("pkg/common/directories.json")
-	if fileErr != nil {
-		log.Panicf("Error reading file directories %v: ", *fileErr)
-	}
+		messagesArray, err := service.GetAttachmentArray(gmailClient, user, query, srv)
+		if err != nil {
+			log.Print("error getting the attachments")
+		}
+		dereferencedMessageArr := *messagesArray
 
-	for _, message := range dereferencedMessageArr {
-		// Create the classification prompt
-		subject := message.Subject
-		for _, attachment := range message.Files {
-			classificationQuestion := service.CreateClassifyEmailPrompt(subject, attachment)
-			classificationPrompt := service.CreateSubsequentPrompt(classificationQuestion)
+		// Google drive setup
+		driveConfig, err := google.ConfigFromJSON(b, drive.DriveScope)
+		if err != nil {
+			log.Fatalf("Unable to parse client secret file to config: %v", err)
+		}
 
-			// Send the classification request
-			classificationResponse, err := gateway.SendCompletionRequest(classificationPrompt, apiKey)
-			if err != nil {
-				log.Fatalf("Error sending classification request to openai with : %v", err)
-			}
+		driveClient, err := resource.GetClientFromDBToken(driveConfig, dbUserData.GdriveCode, firebaseRepository, dbUserData.UserId)
+		if err != nil {
+			log.Fatalf("Unable to get gmail client: %v", err)
+		}
 
-			fmt.Println("file info")
-			fmt.Printf("email subject name: %s , email attachment name: %s \n", message.Subject, attachment.Name)
+		driveSrv, err := drive.NewService(ctx, option.WithHTTPClient(driveClient))
+		if err != nil {
+			log.Fatalf("Unable to retrieve Drive client: %v", err)
+		}
+		localDriveService := service.DriveServiceLocal{Service: driveSrv}
 
-			if classificationResponse != nil {
-				oneWordResponse, err1 := service.ExtractOpenAIContent(*classificationResponse)
-				if err1 != nil {
-					log.Print("Error extracting response from")
-				}
+		/*
+			Purposefully comment out the below code
+			Only uncomment when you want to get the directory ID's from your google drive
+			Only needed this while setting up the directories.json file
+		*/
+		//dirId, err := localDriveService.GetDriveDirectories()
 
-				fmt.Printf("Formatted string: %s \n", *oneWordResponse)
-				driveDirID, err := common.FindDirectoryByID(*directories, *oneWordResponse)
+		// Get the file directories and ID's
+		directories, fileErr := common.ReadJsonFile("pkg/common/directories.json")
+		if fileErr != nil {
+			log.Panicf("Error reading file directories %v: ", *fileErr)
+		}
+
+		for _, message := range dereferencedMessageArr {
+			// Create the classification prompt
+			subject := message.Subject
+			for _, attachment := range message.Files {
+				classificationQuestion := service.CreateClassifyEmailPrompt(subject, attachment)
+				classificationPrompt := service.CreateSubsequentPrompt(classificationQuestion)
+
+				// Send the classification request
+				classificationResponse, err := gateway.SendCompletionRequest(classificationPrompt, apiKey)
 				if err != nil {
-					log.Fatalf("Error getting corresponding google drive id locally : %v", err)
-				}
-				fmt.Printf("Corresponding file id: %s \n", *driveDirID)
-
-				// Finally upload file
-				driveUploadErr := localDriveService.UploadFile(attachment, *driveDirID)
-				if driveUploadErr != nil {
-					fmt.Printf("error uploading file %v \n", err)
+					log.Fatalf("Error sending classification request to openai with : %v", err)
 				}
 
+				fmt.Println("file info")
+				fmt.Printf("email subject name: %s , email attachment name: %s \n", message.Subject, attachment.Name)
+
+				if classificationResponse != nil {
+					oneWordResponse, err1 := service.ExtractOpenAIContent(*classificationResponse)
+					if err1 != nil {
+						log.Print("Error extracting response from")
+					}
+
+					fmt.Printf("Formatted string: %s \n", *oneWordResponse)
+					driveDirID, err := common.FindDirectoryByID(*directories, *oneWordResponse)
+					if err != nil {
+						log.Fatalf("Error getting corresponding google drive id locally : %v", err)
+					}
+					fmt.Printf("Corresponding file id: %s \n", *driveDirID)
+
+					// Finally upload file
+					driveUploadErr := localDriveService.UploadFile(attachment, *driveDirID)
+					if driveUploadErr != nil {
+						fmt.Printf("error uploading file %v \n", err)
+					}
+				}
 			}
 		}
 	}
-
 }
 
 func setupCron() {

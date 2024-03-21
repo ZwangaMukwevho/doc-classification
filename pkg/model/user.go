@@ -11,7 +11,14 @@ type User struct {
 
 type FirebaseUser struct {
 	UserId     string
-	Categories []string
+	Categories map[string]string
 	GmailCode  *oauth2.Token
 	GdriveCode *oauth2.Token
+}
+
+type Users struct {
+	UserId     string        `json:"UserId"`
+	Categories []string      `json:"Categories"`
+	GmailCode  *oauth2.Token `json:"GmailCode"`
+	GdriveCode *oauth2.Token `json:"GdriveCode"`
 }

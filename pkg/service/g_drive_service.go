@@ -15,6 +15,7 @@ type DriveMethods interface {
 	ListFiles(size int64) *[]model.File
 	UploadFile(message model.Message) error
 	GetDriveDirectories() (*[]model.Directory, error)
+	CreateDriveDirectory(name string) (*drive.File, error)
 }
 
 type DriveServiceLocal struct {
@@ -88,6 +89,15 @@ func (ds DriveServiceLocal) UploadFile(attachment model.Attachment, directoryID 
 	}
 	fmt.Printf("File '%s' uploaded to the specified directory in Google Drive.\n", attachment.Name)
 	return nil
+}
+
+func (ds DriveServiceLocal) CreateDriveDirectory(name string) (*drive.File, error) {
+	file, err := ds.Service.Files.Create(&drive.File{
+		Name:     name,
+		MimeType: "application/vnd.google-apps.folder",
+	}).Do()
+
+	return file, err
 }
 
 func GetGdriveToken(code string) (*oauth2.Token, error) {

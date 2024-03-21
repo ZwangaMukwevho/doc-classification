@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"firebase.google.com/go/db"
 	"github.com/gin-gonic/gin"
@@ -16,6 +17,7 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/gmail/v1"
+	"google.golang.org/api/option"
 )
 
 type Handler struct {
@@ -117,33 +119,46 @@ func (h *Handler) postGmailAuthCode(c *gin.Context) {
 func (h *Handler) createUser(c *gin.Context) {
 	var userData model.User
 
-	fmt.Println("createUser called")
 	if err := c.ShouldBindJSON(&userData); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, err)
 		return
 	}
 
-	fmt.Println("getting gdrive token")
-	gdriveToken, err := service.GetGdriveToken(userData.GmailCode)
+	gdriveToken, err := service.GetGdriveToken(userData.GdriveCode)
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, err)
 		return
 	}
 
-	fmt.Println("getting gmail token")
 	gmailToken, err := service.GetGmailToken(userData.GmailCode)
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, err)
 		return
 	}
 
+	folderNameAndIds := make(map[string]string)
+	driveService, err := initialiseDriveServiceForHandler(gdriveToken)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	for _, folderName := range userData.Categories {
+		folder, err := driveService.CreateDriveDirectory(folderName)
+
+		if err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, err)
+		}
+
+		folderNameAndIds[folderName] = folder.Id
+	}
+
 	var firebaseUser = model.FirebaseUser{
 		UserId:     userData.UserId,
 		GmailCode:  gmailToken,
 		GdriveCode: gdriveToken,
-		Categories: userData.Categories,
+		Categories: folderNameAndIds,
 	}
-	fmt.Println("firebaseUser: ", firebaseUser)
 
 	h.FirebaseRespository.UploadUserData(firebaseUser)
 
@@ -159,7 +174,7 @@ func (h *Handler) createGmailToken(c *gin.Context) {
 		return
 	}
 
-	config, err := service.GetGmailOauthConfig(gmail.GmailReadonlyScope)
+	config, err := service.GetGmailOauthConfig(drive.DriveScope)
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, err)
 		return
@@ -172,4 +187,57 @@ func (h *Handler) createGmailToken(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, tok)
+}
+
+func (h *Handler) getUsers(c *gin.Context) {
+	users, err := h.FirebaseRespository.GetUserDataList()
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, users)
+}
+
+func (h *Handler) updateToken(c *gin.Context) {
+	var token oauth2.Token
+
+	if err := c.ShouldBindJSON(&token); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, err)
+		return
+	}
+
+	err := h.FirebaseRespository.UpdateGmailToken("mkaax2a72", token)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, "OK")
+}
+
+func initialiseDriveServiceForHandler(token *oauth2.Token) (*service.DriveServiceLocal, error) {
+
+	ctx := context.Background()
+	b, err := os.ReadFile("client_secret_973692223612-28ae9a7njdsfh7gv89l0fih5q36jt52m.apps.googleusercontent.com.json")
+	if err != nil {
+		log.Fatalf("Unable to read client secret file: %v", err)
+		return nil, err
+	}
+
+	driveConfig, err := google.ConfigFromJSON(b, drive.DriveScope)
+	if err != nil {
+		log.Fatalf("Unable to parse client secret file to config: %v", err)
+		return nil, err
+	}
+
+	driveClient := driveConfig.Client(context.Background(), token)
+
+	driveSrv, err := drive.NewService(ctx, option.WithHTTPClient(driveClient))
+	if err != nil {
+		log.Fatalf("Unable to retrieve Drive client: %v", err)
+	}
+
+	srv := service.DriveServiceLocal{Service: driveSrv}
+	return &srv, nil
 }
