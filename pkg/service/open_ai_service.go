@@ -69,3 +69,18 @@ func ExtractOpenAIContent(responseBody string) (*string, *error) {
 
 	return &content, nil
 }
+
+func CreateContentString(categories map[string]model.Category) string {
+	// Initialize the formatted string
+	formattedString := "You are a document classification assistant. I have categories I want to classify my email documents which are:"
+
+	// Iterate over the items slice
+	counter := 1
+	for _, category := range categories {
+		// Add the item's category and description to the formatted string
+		formattedString += fmt.Sprintf(" %d. %s: %s,", counter, category.Category, category.Description)
+		counter++
+	}
+
+	return formattedString
+}

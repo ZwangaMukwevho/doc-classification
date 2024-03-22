@@ -38,7 +38,6 @@ func (ds DriveServiceLocal) GetDriveDirectories() (*[]model.Directory, error) {
 		directory.ID = folder.Id
 		directory.Name = folder.Name
 		directories = append(directories, directory)
-		fmt.Printf("Name: %s, ID: %s\n", folder.Name, folder.Id)
 	}
 
 	return &directories, nil
@@ -60,7 +59,6 @@ func (ds DriveServiceLocal) ListFiles(size int64) *[]model.File {
 			file.ID = f.Id
 			file.Name = f.Name
 			files = append(files, file)
-			fmt.Printf("%s (%s)\n", f.Name, f.Id)
 		}
 	}
 	return &files

@@ -81,7 +81,6 @@ func (h *Handler) getGmailAuthKey(c *gin.Context) {
 	var authToken *oauth2.Token
 
 	ref := h.FirebaseClient.NewRef("users/testGmailKey")
-	fmt.Println("calling ref")
 	if err := ref.Get(context.Background(), &authToken); err != nil {
 		log.Print(err)
 		c.IndentedJSON(http.StatusInternalServerError, err)
@@ -136,28 +135,28 @@ func (h *Handler) createUser(c *gin.Context) {
 		return
 	}
 
-	folderNameAndIds := make(map[string]string)
+	CategoriesInformation := make(map[string]model.Category)
 	driveService, err := initialiseDriveServiceForHandler(gdriveToken)
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, err)
 		return
 	}
 
-	for _, folderName := range userData.Categories {
-		folder, err := driveService.CreateDriveDirectory(folderName)
+	for _, categoryObject := range userData.Categories {
+		folder, err := driveService.CreateDriveDirectory(categoryObject.Category)
 
 		if err != nil {
 			c.IndentedJSON(http.StatusInternalServerError, err)
 		}
 
-		folderNameAndIds[folderName] = folder.Id
+		CategoriesInformation[folder.Id] = categoryObject
 	}
 
 	var firebaseUser = model.FirebaseUser{
 		UserId:     userData.UserId,
 		GmailCode:  gmailToken,
 		GdriveCode: gdriveToken,
-		Categories: folderNameAndIds,
+		Categories: CategoriesInformation,
 	}
 
 	h.FirebaseRespository.UploadUserData(firebaseUser)

@@ -30,18 +30,18 @@ func GetMimeType(fileName string) string {
 }
 
 // FindDirectoryByID searches for a directory by Name and returns its corresponding ID
-func FindDirectoryByID(directories []model.Directory, nameToFind string) (*string, *error) {
+func FindDirectoryByID(directories map[string]model.Category, nameToFind string) (*string, *error) {
 	// Iterate through directories to find a match
 	defaultDirectoryID := ""
-	for _, dir := range directories {
-		if strings.EqualFold(dir.Name, nameToFind) {
-			return &dir.ID, nil
+	for ID, dir := range directories {
+		if strings.EqualFold(dir.Category, nameToFind) {
+			return &ID, nil
 		}
 
 		// Get the default ID here
 		// This could be set globally somewhere, but we are gonna loop through it here either way, so set here
-		if dir.Name == "Default" {
-			defaultDirectoryID = dir.ID
+		if dir.Category == "Default" {
+			defaultDirectoryID = ID
 		}
 	}
 

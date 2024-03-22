@@ -5,7 +5,6 @@ import (
 	"doc-classification/pkg/repository"
 	"doc-classification/pkg/service"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -26,7 +25,6 @@ func GetClient(config *oauth2.Config, tokenFile string) *http.Client {
 
 func GetClientFromDBToken(config *oauth2.Config, token *oauth2.Token, db repository.FirebaseRepository, userID string) (*http.Client, error) {
 
-	fmt.Println("config: ", config)
 	if token.Valid() { // check if the token is expired
 		return config.Client(context.Background(), token), nil
 	}

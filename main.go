@@ -49,14 +49,14 @@ func cronJob() {
 	fmt.Println("Cron job is running at:", time.Now())
 	// Add your cron job logic here
 	if err := godotenv.Load(); err != nil {
-		fmt.Println("Error loading .env file")
+		log.Println("Error loading .env file")
 		return
 	}
 
 	// Read API key from environment variable
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
-		fmt.Println("API key is missing. Set the OPENAI_API_KEY environment variable.")
+		log.Println("API key is missing. Set the OPENAI_API_KEY environment variable.")
 		return
 	}
 
@@ -98,7 +98,7 @@ func cronJob() {
 		// Setting up the user and the time stamp
 		user := "me"
 		currentTime := time.Now()
-		yesterday := currentTime.AddDate(0, 0, -15)
+		yesterday := currentTime.AddDate(0, 0, -1)
 		timestampTest := yesterday.Format("2006/01/02")
 		query := fmt.Sprintf("in:inbox category:primary has:attachment after:%s -from:no-reply@sixty60.co.za", timestampTest)
 
@@ -133,11 +133,8 @@ func cronJob() {
 		//dirId, err := localDriveService.GetDriveDirectories()
 
 		// Get the file directories and ID's
-		directories, fileErr := common.ReadJsonFile("pkg/common/directories.json")
-		if fileErr != nil {
-			log.Panicf("Error reading file directories %v: ", *fileErr)
-		}
 
+		openAIContentString := service.CreateContentString(dbUserData.Categories)
 		for _, message := range dereferencedMessageArr {
 			// Create the classification prompt
 			subject := message.Subject
@@ -146,14 +143,12 @@ func cronJob() {
 				classificationPrompt := service.CreateSubsequentPrompt(classificationQuestion)
 
 				// Send the classification request
-				classificationResponse, err := gateway.SendCompletionRequest(classificationPrompt, apiKey)
+				classificationResponse, err := gateway.SendCompletionRequest(openAIContentString, classificationPrompt, apiKey)
 				if err != nil {
 					log.Fatalf("Error sending classification request to openai with : %v", err)
 				}
 
-				fmt.Println("file info")
 				fmt.Printf("email subject name: %s , email attachment name: %s \n", message.Subject, attachment.Name)
-
 				if classificationResponse != nil {
 					oneWordResponse, err1 := service.ExtractOpenAIContent(*classificationResponse)
 					if err1 != nil {
@@ -161,16 +156,15 @@ func cronJob() {
 					}
 
 					fmt.Printf("Formatted string: %s \n", *oneWordResponse)
-					driveDirID, err := common.FindDirectoryByID(*directories, *oneWordResponse)
+					driveDirID, err := common.FindDirectoryByID(dbUserData.Categories, *oneWordResponse)
 					if err != nil {
 						log.Fatalf("Error getting corresponding google drive id locally : %v", err)
 					}
-					fmt.Printf("Corresponding file id: %s \n", *driveDirID)
 
 					// Finally upload file
 					driveUploadErr := localDriveService.UploadFile(attachment, *driveDirID)
 					if driveUploadErr != nil {
-						fmt.Printf("error uploading file %v \n", err)
+						log.Printf("error uploading file %v \n", err)
 					}
 				}
 			}
@@ -184,10 +178,9 @@ func setupCron() {
 	// Schedule the job to run every minute
 	// */3 * * * * fixing
 	// 0 0 * * * normal
-	fmt.Println("running")
-	_, err := c.AddFunc("0 0 * * *", cronJob)
+	_, err := c.AddFunc("*/2 * * * *", cronJob)
 	if err != nil {
-		fmt.Println("Error scheduling cron job:", err)
+		log.Println("Error scheduling cron job:", err)
 		return
 	}
 
