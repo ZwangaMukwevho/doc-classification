@@ -61,6 +61,7 @@ func (h *Handler) initiateGmailAuth(c *gin.Context) {
 func (h *Handler) initiateDriveAuth(c *gin.Context) {
 
 	oAuthByteStream, err := common.GetJsonFileByteStream("client_secret_973692223612-28ae9a7njdsfh7gv89l0fih5q36jt52m.apps.googleusercontent.com.json")
+	//oAuthByteStream, err := common.GetJsonFileByteStream("doc_classification_oauth_key.json")
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, "error auth")
 		return
@@ -136,21 +137,21 @@ func (h *Handler) createUser(c *gin.Context) {
 	}
 
 	CategoriesInformation := make(map[string]model.Category)
-	driveService, err := initialiseDriveServiceForHandler(gdriveToken)
-	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, err)
-		return
-	}
+	// driveService, err := initialiseDriveServiceForHandler(gdriveToken)
+	// if err != nil {
+	// 	c.IndentedJSON(http.StatusInternalServerError, err)
+	// 	return
+	// }
 
-	for _, categoryObject := range userData.Categories {
-		folder, err := driveService.CreateDriveDirectory(categoryObject.Category)
+	// for _, categoryObject := range userData.Categories {
+	// 	folder, err := driveService.CreateDriveDirectory(categoryObject.Category)
 
-		if err != nil {
-			c.IndentedJSON(http.StatusInternalServerError, err)
-		}
+	// 	if err != nil {
+	// 		c.IndentedJSON(http.StatusInternalServerError, err)
+	// 	}
 
-		CategoriesInformation[folder.Id] = categoryObject
-	}
+	// 	CategoriesInformation[folder.Id] = categoryObject
+	// }
 
 	var firebaseUser = model.FirebaseUser{
 		UserId:     userData.UserId,

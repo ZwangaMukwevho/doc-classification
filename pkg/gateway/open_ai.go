@@ -37,7 +37,6 @@ func SendCompletionRequest(contentString string, userRequestBody string, apiKey 
 		return nil, err
 	}
 	defer resp.Body.Close()
-
 	// Read and display the response
 	responseBody := new(bytes.Buffer)
 	responseBody.ReadFrom(resp.Body)
