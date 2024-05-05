@@ -119,35 +119,26 @@ func (h *Handler) postGmailAuthCode(c *gin.Context) {
 func (h *Handler) createUser(c *gin.Context) {
 	var userData model.User
 
-	fmt.Println("getting the create user")
 	if err := c.ShouldBindJSON(&userData); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, err)
 		return
 	}
 
-	fmt.Printf("getting drive token: %v \n", userData)
 	gdriveToken, err := service.GetGdriveToken(userData.GdriveCode)
-	fmt.Print("the drive token: %v \n", gdriveToken)
 	if err != nil {
-		fmt.Println("error in the gdrive")
 		c.IndentedJSON(http.StatusInternalServerError, err)
 		return
 	}
 
 	gmailToken, err := service.GetGmailToken(userData.GmailCode)
-	fmt.Printf("getting mail token: %v \n", gmailToken)
 	if err != nil {
-		fmt.Println("error in the gmail")
 		c.IndentedJSON(http.StatusInternalServerError, err)
 		return
 	}
 
 	CategoriesInformation := make(map[string]model.Category)
-	fmt.Printf("categories info %v \n", CategoriesInformation)
 	driveService, err := initialiseDriveServiceForHandler(gdriveToken)
-	fmt.Printf("drive service %v \n: ", driveService)
 	if err != nil {
-		fmt.Println("error on creating categories")
 		c.IndentedJSON(http.StatusInternalServerError, err)
 		return
 	}
@@ -161,7 +152,6 @@ func (h *Handler) createUser(c *gin.Context) {
 
 		CategoriesInformation[folder.Id] = categoryObject
 	}
-	fmt.Println("created categories")
 
 	var firebaseUser = model.FirebaseUser{
 		UserId:     userData.UserId,
@@ -170,9 +160,7 @@ func (h *Handler) createUser(c *gin.Context) {
 		Categories: CategoriesInformation,
 	}
 
-	fmt.Printf("firebase user: %v \n", firebaseUser)
 	h.FirebaseRespository.UploadUserData(firebaseUser)
-	fmt.Println("updated that upload to firebase")
 
 	c.IndentedJSON(http.StatusOK, "OK")
 }
