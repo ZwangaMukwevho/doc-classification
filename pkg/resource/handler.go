@@ -137,21 +137,21 @@ func (h *Handler) createUser(c *gin.Context) {
 	}
 
 	CategoriesInformation := make(map[string]model.Category)
-	// driveService, err := initialiseDriveServiceForHandler(gdriveToken)
-	// if err != nil {
-	// 	c.IndentedJSON(http.StatusInternalServerError, err)
-	// 	return
-	// }
+	driveService, err := initialiseDriveServiceForHandler(gdriveToken)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, err)
+		return
+	}
 
-	// for _, categoryObject := range userData.Categories {
-	// 	folder, err := driveService.CreateDriveDirectory(categoryObject.Category)
+	for _, categoryObject := range userData.Categories {
+		folder, err := driveService.CreateDriveDirectory(categoryObject.Category)
 
-	// 	if err != nil {
-	// 		c.IndentedJSON(http.StatusInternalServerError, err)
-	// 	}
+		if err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, err)
+		}
 
-	// 	CategoriesInformation[folder.Id] = categoryObject
-	// }
+		CategoriesInformation[folder.Id] = categoryObject
+	}
 
 	var firebaseUser = model.FirebaseUser{
 		UserId:     userData.UserId,
