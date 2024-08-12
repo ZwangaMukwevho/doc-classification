@@ -109,7 +109,7 @@ func cronJob() {
 		dereferencedMessageArr := *messagesArray
 
 		// Google drive setup
-		driveConfig, err := google.ConfigFromJSON(b, drive.DriveScope)
+		driveConfig, err := google.ConfigFromJSON(b, drive.DriveAppdataScope)
 		if err != nil {
 			log.Fatalf("Unable to parse client secret file to config: %v", err)
 		}
