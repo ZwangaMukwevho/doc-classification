@@ -116,7 +116,7 @@ func cronJob() {
 		if err != nil {
 			log.Print("error getting the attachments")
 		}
-		fmt.Printf("messages array: %v \n", messagesArray)
+
 		dereferencedMessageArr := *messagesArray
 		fmt.Printf("derefernce message array: %v \n", messagesArray)
 

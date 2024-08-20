@@ -26,4 +26,6 @@ go.work
 # environment vars
 .env
 
-main.go
+Jenkinsfile
+Makefile
+main
