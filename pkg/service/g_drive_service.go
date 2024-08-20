@@ -99,7 +99,7 @@ func (ds DriveServiceLocal) CreateDriveDirectory(name string) (*drive.File, erro
 }
 
 func GetGdriveToken(code string) (*oauth2.Token, error) {
-	config, err := GetGmailOauthConfig(drive.DriveScope)
+	config, err := GetGmailOauthConfig(drive.DriveReadonlyScope)
 	if err != nil {
 		return nil, err
 	}

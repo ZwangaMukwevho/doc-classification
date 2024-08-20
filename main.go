@@ -31,7 +31,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	basePath := "localhost:8080"
+	basePath := "localhost:8000"
 
 	firebaseRepository := repository.NewFirebaseRestClient(firebaseDB)
 
@@ -77,9 +77,17 @@ func cronJob() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Printf("users %v: \n", users)
 
 	for _, dbUserData := range *users {
 		gmailConfig, err := google.ConfigFromJSON(b, gmail.GmailReadonlyScope)
+		if err != nil {
+			log.Fatalf("Unable to parse client secret file to config: %v", err)
+		}
+		fmt.Printf("gmail config: %v \n", gmailConfig)
+
+		// Google drive setup
+		driveConfig, err := google.ConfigFromJSON(b, drive.DriveFileScope)
 		if err != nil {
 			log.Fatalf("Unable to parse client secret file to config: %v", err)
 		}
@@ -88,12 +96,14 @@ func cronJob() {
 		if err != nil {
 			log.Fatalf("Unable to get gmail client: %v", err)
 		}
+		fmt.Printf("gmail client: %v \n", gmailClient)
 
 		// initialise the gmail service
 		srv, err := gmail.NewService(ctx, option.WithHTTPClient(gmailClient))
 		if err != nil {
 			log.Fatalf("Unable to retrieve Gmail client: %v", err)
 		}
+		fmt.Printf("gmail srv: %v \n", srv)
 
 		// Setting up the user and the time stamp
 		user := "me"
@@ -106,23 +116,20 @@ func cronJob() {
 		if err != nil {
 			log.Print("error getting the attachments")
 		}
+		fmt.Printf("messages array: %v \n", messagesArray)
 		dereferencedMessageArr := *messagesArray
-
-		// Google drive setup
-		driveConfig, err := google.ConfigFromJSON(b, drive.DriveScope)
-		if err != nil {
-			log.Fatalf("Unable to parse client secret file to config: %v", err)
-		}
+		fmt.Printf("derefernce message array: %v \n", messagesArray)
 
 		driveClient, err := resource.GetClientFromDBToken(driveConfig, dbUserData.GdriveCode, firebaseRepository, dbUserData.UserId)
 		if err != nil {
 			log.Fatalf("Unable to get gmail client: %v", err)
 		}
-
+		fmt.Printf("drive client: %v \n", driveClient)
 		driveSrv, err := drive.NewService(ctx, option.WithHTTPClient(driveClient))
 		if err != nil {
 			log.Fatalf("Unable to retrieve Drive client: %v", err)
 		}
+		fmt.Printf("UnDrive service %v \n", driveClient)
 		localDriveService := service.DriveServiceLocal{Service: driveSrv}
 
 		/*
