@@ -44,7 +44,7 @@ func GetTokenUsingAPI(config *oauth2.Config, code string) (*oauth2.Token, error)
 }
 
 func GetAuthCodeURL(config *oauth2.Config) string {
-	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
+	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline, oauth2.ApprovalForce)
 	return authURL
 }
 
