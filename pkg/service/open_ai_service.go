@@ -32,39 +32,39 @@ func CreateSubsequentPrompt(prompt string) string {
 	return requestBody
 }
 
-func ExtractOpenAIContent(responseBody string) (*string, *error) {
+func ExtractOpenAIContent(responseBody string) (*string, error) {
 	// Create a bytes buffer and read the response body into it
 	responseBuffer := bytes.NewBufferString(responseBody)
 
 	// Decode JSON response
 	var jsonResponse map[string]interface{}
 	if err := json.NewDecoder(responseBuffer).Decode(&jsonResponse); err != nil {
-		return nil, &err
+		return nil, err
 	}
 
 	// Extract the content
 	choices, ok := jsonResponse["choices"].([]interface{})
 	if !ok || len(choices) == 0 {
 		err := errors.New("no choices found in the response")
-		return nil, &err
+		return nil, err
 	}
 
 	firstChoice, ok := choices[0].(map[string]interface{})
 	if !ok {
 		err := errors.New("error extracting choice information")
-		return nil, &err
+		return nil, err
 	}
 
 	message, ok := firstChoice["message"].(map[string]interface{})
 	if !ok {
 		err := errors.New("error extracting message information")
-		return nil, &err
+		return nil, err
 	}
 
 	content, ok := message["content"].(string)
 	if !ok {
 		err := errors.New("error extracting content")
-		return nil, &err
+		return nil, err
 	}
 
 	return &content, nil

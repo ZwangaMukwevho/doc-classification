@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"log"
+	"doc-classification/pkg/common"
 
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/db"
@@ -22,16 +22,16 @@ func InitDB(databaseURL string, serviceFile string) (*db.Client, error) {
 
 	app, err := firebase.NewApp(ctx, conf, opt)
 	if err != nil {
-		log.Fatalln("error in initializing firebase app: ", err)
+		common.Logger.Errorf("error in initializing firebase app: %v", err)
 		return nil, err
 	}
 
 	client, err := app.Database(ctx)
 	if err != nil {
-		log.Fatalln("error in creating firebase DB client: ", err)
+		common.Logger.Errorf("error in creating firebase DB client: %v", err)
 		return nil, err
 	}
 
-	log.Print("Successfully initialised DB")
+	common.Logger.Info("Successfully initialised DB")
 	return client, err
 }

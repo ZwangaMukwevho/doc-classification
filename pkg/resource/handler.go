@@ -6,7 +6,6 @@ import (
 	"doc-classification/pkg/model"
 	"doc-classification/pkg/repository"
 	"doc-classification/pkg/service"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -46,7 +45,6 @@ func (h *Handler) initiateGmailAuth(c *gin.Context) {
 		return
 	}
 	authURL := service.GetAuthCodeURL(gmailConfig)
-	fmt.Println("auth url: ", authURL)
 
 	c.String(http.StatusOK, authURL)
 }
