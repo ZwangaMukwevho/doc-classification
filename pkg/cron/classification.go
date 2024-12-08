@@ -35,7 +35,7 @@ func ClassificationCron() {
 	}
 
 	ctx := context.Background()
-	b, err := os.ReadFile("client_secret_973692223612-28ae9a7njdsfh7gv89l0fih5q36jt52m.apps.googleusercontent.com.json")
+	b, err := os.ReadFile("google_client_secret.json")
 	if err != nil {
 		common.Logger.Fatalf("Unable to read client secret file: %v", err)
 	}
@@ -58,7 +58,6 @@ func ClassificationCron() {
 			common.Logger.Errorf("Unable to parse client secret file to config: %v", err)
 		}
 
-		// Google drive setup
 		driveConfig, err := google.ConfigFromJSON(b, drive.DriveFileScope)
 		if err != nil {
 			common.Logger.Errorf("Unable to parse client secret file to config: %v", err)
@@ -68,33 +67,32 @@ func ClassificationCron() {
 		if err != nil {
 			common.Logger.Errorf("Unable to get gmail client: %v", err)
 		}
-
-		// initialise the gmail service
-		srv, err := gmail.NewService(ctx, option.WithHTTPClient(gmailClient))
+		gmailService, err := gmail.NewService(ctx, option.WithHTTPClient(gmailClient))
 		if err != nil {
 			common.Logger.Errorf("Unable to retrieve Gmail client: %v", err)
 		}
-
-		// Setting up the user and the time stamp
-		user := "me"
-		queryDateRange := time.Now().AddDate(0, 0, -1).Format("2006/01/02")
-		query := fmt.Sprintf("in:inbox category:primary has:attachment after:%s -from:no-reply@sixty60.co.za", queryDateRange)
-
-		messagesArray, err := service.GetAttachmentArray(gmailClient, user, query, srv)
-		if err != nil {
-			common.Logger.Errorf("error getting the attachments: %v", err)
-		}
+		localGmailService := service.GmailServiceLocal{Service: gmailService}
 
 		// dereferencedMessageArr := *messagesArray
 		driveClient, err := resource.GetClientFromDBToken(driveConfig, dbUserData.GdriveCode, firebaseRepository, dbUserData.UserId)
 		if err != nil {
 			common.Logger.Errorf("Unable to get gmail client: %v", err)
 		}
-		driveSrv, err := drive.NewService(ctx, option.WithHTTPClient(driveClient))
+		driveService, err := drive.NewService(ctx, option.WithHTTPClient(driveClient))
 		if err != nil {
 			common.Logger.Errorf("Unable to retrieve Drive client: %v", err)
 		}
-		localDriveService := service.DriveServiceLocal{Service: driveSrv}
+		localDriveService := service.DriveServiceLocal{Service: driveService}
+
+		// Query the attachments
+		user := "me"
+		queryDateRange := time.Now().AddDate(0, 0, -1).Format("2006/01/02")
+		query := fmt.Sprintf("in:inbox category:primary has:attachment after:%s -from:no-reply@sixty60.co.za", queryDateRange)
+
+		messagesArray, err := localGmailService.GetAttachmentArray(user, query)
+		if err != nil {
+			common.Logger.Errorf("error getting the attachments: %v", err)
+		}
 
 		/*
 			Purposefully comment out the below code

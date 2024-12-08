@@ -17,7 +17,7 @@ import (
 
 func CleanUpCron() {
 	ctx := context.Background()
-	b, err := os.ReadFile("client_secret_973692223612-28ae9a7njdsfh7gv89l0fih5q36jt52m.apps.googleusercontent.com.json")
+	b, err := os.ReadFile("google_client_secret.json")
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}

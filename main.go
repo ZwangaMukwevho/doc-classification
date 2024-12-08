@@ -26,7 +26,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	basePath := "localhost:8000"
+	basePath := ":8000"
 
 	firebaseRepository := repository.NewFirebaseRestClient(firebaseDB)
 

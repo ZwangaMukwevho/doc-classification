@@ -25,6 +25,14 @@ type Handler struct {
 	FirebaseRespository repository.FirebaseRepository
 }
 
+// @Summary Ping the api
+// @Success 200 string "pong"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /ping [get]
+func (h *Handler) pong(c *gin.Context) {
+	c.IndentedJSON(http.StatusOK, "pong")
+}
+
 // @Summary Get all words
 // @Description Get all words from the Firebase Realtime Database
 // @Tags words
@@ -33,7 +41,7 @@ type Handler struct {
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /words [get]
 func (h *Handler) initiateGmailAuth(c *gin.Context) {
-	oAuthByteStream, err := common.GetJsonFileByteStream("client_secret_973692223612-28ae9a7njdsfh7gv89l0fih5q36jt52m.apps.googleusercontent.com.json")
+	oAuthByteStream, err := common.GetJsonFileByteStream("google_client_secret.json")
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, "error auth")
 		return
@@ -58,8 +66,7 @@ func (h *Handler) initiateGmailAuth(c *gin.Context) {
 // @Router /words [get]
 func (h *Handler) initiateDriveAuth(c *gin.Context) {
 
-	oAuthByteStream, err := common.GetJsonFileByteStream("client_secret_973692223612-28ae9a7njdsfh7gv89l0fih5q36jt52m.apps.googleusercontent.com.json")
-	//oAuthByteStream, err := common.GetJsonFileByteStream("doc_classification_oauth_key.json")
+	oAuthByteStream, err := common.GetJsonFileByteStream("google_client_secret.json")
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, "error auth")
 		return
@@ -121,13 +128,13 @@ func (h *Handler) createUser(c *gin.Context) {
 		return
 	}
 
-	gdriveToken, err := service.GetGdriveToken(userData.GdriveCode)
+	gdriveToken, err := service.GetGoogleToken(userData.GdriveCode, drive.DriveReadonlyScope)
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, err)
 		return
 	}
 
-	gmailToken, err := service.GetGmailToken(userData.GmailCode)
+	gmailToken, err := service.GetGoogleToken(userData.GmailCode, gmail.GmailReadonlyScope)
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, err)
 		return
@@ -171,7 +178,7 @@ func (h *Handler) createGmailToken(c *gin.Context) {
 		return
 	}
 
-	config, err := service.GetGmailOauthConfig(drive.DriveScope)
+	config, err := service.GetOauthConfig(drive.DriveScope)
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, err)
 		return
@@ -216,7 +223,7 @@ func (h *Handler) updateToken(c *gin.Context) {
 func initialiseDriveServiceForHandler(token *oauth2.Token) (*service.DriveServiceLocal, error) {
 
 	ctx := context.Background()
-	b, err := os.ReadFile("client_secret_973692223612-28ae9a7njdsfh7gv89l0fih5q36jt52m.apps.googleusercontent.com.json")
+	b, err := os.ReadFile("google_client_secret.json")
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
 		return nil, err

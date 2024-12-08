@@ -11,14 +11,14 @@ func NewRouter(handler Handler) *gin.Engine {
 
 	// Enable CORS
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:3000"}
+	config.AllowOrigins = []string{"*"}
 	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE"}
 	router.Use(cors.New(config))
 
+	router.GET("/ping", handler.pong)
 	router.GET("/gmail", handler.initiateGmailAuth)
 	router.GET("/gdrive", handler.initiateDriveAuth)
 	router.GET("/gmail/authkey", handler.getGmailAuthKey)
-	router.POST("/gmail/authkey", handler.getGmailAuthKey)
 	router.POST("/user/create", handler.createUser)
 	router.GET("/users", handler.getUsers)
 	router.POST("/token/create", handler.createGmailToken)
