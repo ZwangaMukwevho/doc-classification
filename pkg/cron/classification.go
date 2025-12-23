@@ -56,21 +56,26 @@ func ClassificationCron() {
 		gmailConfig, err := google.ConfigFromJSON(b, gmail.GmailReadonlyScope)
 		if err != nil {
 			common.Logger.Errorf("Unable to parse client secret file to config: %v", err)
+			continue
 		}
 
 		driveConfig, err := google.ConfigFromJSON(b, drive.DriveFileScope)
 		if err != nil {
 			common.Logger.Errorf("Unable to parse client secret file to config: %v", err)
+			continue
 		}
 
 		gmailClient, err := resource.GetClientFromDBToken(gmailConfig, dbUserData.GmailCode, firebaseRepository, dbUserData.UserId)
 		if err != nil {
 			common.Logger.Errorf("Unable to get gmail client: %v", err)
+			continue
 		}
 
 		gmailService, err := gmail.NewService(ctx, option.WithHTTPClient(gmailClient))
 		if err != nil {
 			common.Logger.Errorf("Unable to retrieve Gmail client: %v", err)
+			continue
+
 		}
 		localGmailService := service.GmailServiceLocal{Service: gmailService}
 
@@ -78,11 +83,15 @@ func ClassificationCron() {
 		driveClient, err := resource.GetClientFromDBToken(driveConfig, dbUserData.GdriveCode, firebaseRepository, dbUserData.UserId)
 		if err != nil {
 			common.Logger.Errorf("Unable to get gmail client: %v", err)
+			continue
 		}
+
 		driveService, err := drive.NewService(ctx, option.WithHTTPClient(driveClient))
 		if err != nil {
 			common.Logger.Errorf("Unable to retrieve Drive client: %v", err)
+			continue
 		}
+
 		localDriveService := service.DriveServiceLocal{Service: driveService}
 
 		// Query the attachments
@@ -93,6 +102,7 @@ func ClassificationCron() {
 		messagesArray, err := localGmailService.GetAttachmentArray(user, query)
 		if err != nil {
 			common.Logger.Errorf("error getting the attachments: %v", err)
+			continue
 		}
 
 		/*
@@ -116,6 +126,7 @@ func ClassificationCron() {
 				classificationResponse, err := gateway.SendCompletionRequest(openAIContentString, classificationPrompt, apiKey)
 				if err != nil {
 					common.Logger.Errorf("Error sending classification request to openai with : %v", err)
+					continue
 				}
 
 				if classificationResponse == nil {
@@ -125,21 +136,25 @@ func ClassificationCron() {
 				oneWordResponse, err := service.ExtractOpenAIContent(*classificationResponse)
 				if err != nil {
 					common.Logger.Errorf("Error extracting response from openai : %v", err)
+					continue
 				}
 
 				driveDirID, err := common.FindDirectoryByID(dbUserData.Categories, *oneWordResponse)
 				if err != nil {
 					common.Logger.Errorf("Error getting corresponding google drive id locally : %v", err)
+					continue
 				}
 
 				if localDriveService.FileExists(attachment.Name, *driveDirID) != nil {
 					common.Logger.Errorf("Skipped uploading file due to the following error: %v", err)
+					continue
 				}
 
 				// Finally upload file
 				driveUploadErr := localDriveService.UploadFile(attachment, *driveDirID)
 				if driveUploadErr != nil {
 					common.Logger.Errorf("error uploading file to gdrive %v \n", err)
+					continue
 				}
 			}
 		}

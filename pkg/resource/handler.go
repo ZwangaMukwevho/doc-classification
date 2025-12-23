@@ -161,7 +161,7 @@ func (h *Handler) createUser(c *gin.Context) {
 			c.IndentedJSON(http.StatusInternalServerError, err)
 			return
 		}
-		common.Logger.Infof("Direcory ID found: %v", *directoryId)
+		common.Logger.Infof("Direcory ID found: %v", directoryId)
 
 		// If the directory already exists we don't want to create another
 		if directoryId != nil {
@@ -265,6 +265,7 @@ func initialiseDriveServiceForHandler(token *oauth2.Token) (*service.DriveServic
 	driveSrv, err := drive.NewService(ctx, option.WithHTTPClient(driveClient))
 	if err != nil {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)
+		return nil, err
 	}
 
 	srv := service.DriveServiceLocal{Service: driveSrv}
