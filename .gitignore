@@ -29,3 +29,12 @@ go.work
 Jenkinsfile
 Makefile
 main
+
+# Log files
+app.Log
+app_monitor.Log
+output.Log
+
+# Binary files
+doc-classification
+main
