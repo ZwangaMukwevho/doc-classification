@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ========= CONFIG =========
-APP="./my-go-binary"      # <-- change to your compiled Go binary path (e.g. ./main)
+APP="./main"      # <-- change to your compiled Go binary path (e.g. ./main)
 OUTPUT_LOG="./output.log" # Logs from the app's stdout/stderr
 APP_LOG="./app.log"       # Logs from the supervisor (restarts, start, stop, etc.)
 SLEEP_SECONDS=60          # Wait time before restart in seconds
@@ -23,6 +23,7 @@ init_logs() {
   touch "$OUTPUT_LOG" "$APP_LOG"
   log_app "Log files initialized: OUTPUT_LOG=$OUTPUT_LOG, APP_LOG=$APP_LOG"
 }
+
 
 run_app() {
   log_app "Starting application: $APP"

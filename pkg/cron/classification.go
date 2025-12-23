@@ -67,6 +67,7 @@ func ClassificationCron() {
 		if err != nil {
 			common.Logger.Errorf("Unable to get gmail client: %v", err)
 		}
+
 		gmailService, err := gmail.NewService(ctx, option.WithHTTPClient(gmailClient))
 		if err != nil {
 			common.Logger.Errorf("Unable to retrieve Gmail client: %v", err)
@@ -129,6 +130,10 @@ func ClassificationCron() {
 				driveDirID, err := common.FindDirectoryByID(dbUserData.Categories, *oneWordResponse)
 				if err != nil {
 					common.Logger.Errorf("Error getting corresponding google drive id locally : %v", err)
+				}
+
+				if localDriveService.FileExists(attachment.Name, *driveDirID) != nil {
+					common.Logger.Errorf("Skipped uploading file due to the following error: %v", err)
 				}
 
 				// Finally upload file

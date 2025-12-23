@@ -124,34 +124,58 @@ func (h *Handler) createUser(c *gin.Context) {
 	var userData model.User
 
 	if err := c.ShouldBindJSON(&userData); err != nil {
+		common.Logger.Errorf("Error binding the payload from request: %v", err)
 		c.IndentedJSON(http.StatusBadRequest, err)
 		return
 	}
 
 	gdriveToken, err := service.GetGoogleToken(userData.GdriveCode, drive.DriveReadonlyScope)
 	if err != nil {
+		common.Logger.Errorf("Error obtaining the Gdrive token on createUser: %v", err)
 		c.IndentedJSON(http.StatusInternalServerError, err)
 		return
 	}
 
 	gmailToken, err := service.GetGoogleToken(userData.GmailCode, gmail.GmailReadonlyScope)
 	if err != nil {
+		common.Logger.Errorf("Error obtaining the Gmail token on createUser: %v", err)
 		c.IndentedJSON(http.StatusInternalServerError, err)
 		return
 	}
 
 	driveService, err := initialiseDriveServiceForHandler(gdriveToken)
 	if err != nil {
+		common.Logger.Errorf("Error initiating the drive service: %v", err)
 		c.IndentedJSON(http.StatusInternalServerError, err)
 		return
 	}
+	common.Logger.Infof("Initialised the drive service")
 
 	CategoriesInformation := make(map[string]model.Category)
 	for _, categoryObject := range userData.Categories {
-		folder, err := driveService.CreateDriveDirectory(categoryObject.Category)
+
+		directoryId, err := driveService.GetRootDirectoryIDByName(categoryObject.Category)
 
 		if err != nil {
+			common.Logger.Errorf("Error obtaining directory id: %v", err)
 			c.IndentedJSON(http.StatusInternalServerError, err)
+			return
+		}
+		common.Logger.Infof("Direcory ID found: %v", *directoryId)
+
+		// If the directory already exists we don't want to create another
+		if directoryId != nil {
+			CategoriesInformation[*directoryId] = categoryObject
+			continue
+		}
+
+		folder, err := driveService.CreateDriveDirectory(categoryObject.Category)
+		common.Logger.Infof("Found the folder here: %v", folder)
+
+		if err != nil {
+			common.Logger.Infof("Error creating the drive directory: %v", err)
+			c.IndentedJSON(http.StatusInternalServerError, err)
+			return
 		}
 
 		CategoriesInformation[folder.Id] = categoryObject
@@ -163,6 +187,7 @@ func (h *Handler) createUser(c *gin.Context) {
 		GdriveCode: gdriveToken,
 		Categories: CategoriesInformation,
 	}
+	common.Logger.Infof("Firebase user initialised: %v", firebaseUser)
 
 	h.FirebaseRespository.UploadUserData(firebaseUser)
 
