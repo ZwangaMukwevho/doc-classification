@@ -53,6 +53,8 @@ func ClassificationCron() {
 	}
 
 	for _, dbUserData := range *users {
+		common.Logger.Infof("Processing user %v", dbUserData.UserId)
+
 		gmailConfig, err := google.ConfigFromJSON(b, gmail.GmailReadonlyScope)
 		if err != nil {
 			common.Logger.Errorf("Unable to parse client secret file to config: %v", err)
@@ -66,6 +68,7 @@ func ClassificationCron() {
 		}
 
 		gmailClient, err := resource.GetClientFromDBToken(gmailConfig, dbUserData.GmailCode, firebaseRepository, dbUserData.UserId)
+		common.Logger.Infof("Gmail client %v", gmailClient)
 		if err != nil {
 			common.Logger.Errorf("Unable to get gmail client: %v", err)
 			continue
@@ -96,7 +99,7 @@ func ClassificationCron() {
 
 		// Query the attachments
 		user := "me"
-		queryDateRange := time.Now().AddDate(0, 0, -1).Format("2006/01/02")
+		queryDateRange := time.Now().AddDate(0, 0, -15).Format("2006/01/02")
 		query := fmt.Sprintf("in:inbox category:primary has:attachment after:%s -from:no-reply@sixty60.co.za", queryDateRange)
 
 		messagesArray, err := localGmailService.GetAttachmentArray(user, query)
@@ -145,7 +148,8 @@ func ClassificationCron() {
 					continue
 				}
 
-				if localDriveService.FileExists(attachment.Name, *driveDirID) != nil {
+				fileExists := localDriveService.FileExists(attachment.Name, *driveDirID)
+				if fileExists != nil {
 					common.Logger.Errorf("Skipped uploading file due to the following error: %v", err)
 					continue
 				}

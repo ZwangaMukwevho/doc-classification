@@ -27,7 +27,7 @@ func GetClient(config *oauth2.Config, tokenFile string) *http.Client {
 func GetClientFromDBToken(config *oauth2.Config, token *oauth2.Token, db repository.FirebaseRepository, userID string) (*http.Client, error) {
 
 	if token.Valid() { // check if the token is expired
-		common.Logger.Info("Error getting valid G-Auth token")
+		common.Logger.Info("Successfully obtained gmail client")
 		return config.Client(context.Background(), token), nil
 	}
 

@@ -78,9 +78,12 @@ func escapeDriveQueryString(s string) string {
 // - error if the file already exists (or if the API call fails)
 func (ds DriveServiceLocal) FileExists(fileName string, directoryID string) error {
 	if fileName == "" {
+		common.Logger.Info("File name parameter is when checking if a file exists")
 		return fmt.Errorf("fileName cannot be empty")
 	}
+
 	if directoryID == "" {
+		common.Logger.Info("DirectorID is required when checking if a file already exists")
 		return fmt.Errorf("directoryID cannot be empty")
 	}
 
@@ -98,12 +101,15 @@ func (ds DriveServiceLocal) FileExists(fileName string, directoryID string) erro
 		IncludeItemsFromAllDrives(true).
 		Do()
 	if err != nil {
+
 		common.Logger.Errorf("Unable to query file existence (name=%s, dir=%s): %v", fileName, directoryID, err)
 		return err
 	}
 
 	if len(results.Files) > 0 {
 		f := results.Files[0]
+		common.Logger.Infof("file already exists in directory: name=%q dir=%s (fileId=%s)", fileName, directoryID, f.Id)
+
 		return fmt.Errorf("file already exists in directory: name=%q dir=%s (fileId=%s)", fileName, directoryID, f.Id)
 	}
 
