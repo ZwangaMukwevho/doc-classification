@@ -99,7 +99,8 @@ func ClassificationCron() {
 
 		// Query the attachments
 		user := "me"
-		queryDateRange := time.Now().AddDate(0, 0, -15).Format("2006/01/02")
+		queryDateRange := time.Now().AddDate(0, 0, -1).Format("2006/01/02")
+		common.Logger.Infof("query date currentyl is %v", queryDateRange)
 		query := fmt.Sprintf("in:inbox category:primary has:attachment after:%s -from:no-reply@sixty60.co.za", queryDateRange)
 
 		messagesArray, err := localGmailService.GetAttachmentArray(user, query)
@@ -150,7 +151,7 @@ func ClassificationCron() {
 
 				fileExists := localDriveService.FileExists(attachment.Name, *driveDirID)
 				if fileExists != nil {
-					common.Logger.Errorf("Skipped uploading file due to the following error: %v", err)
+					common.Logger.Errorf("Skipped uploading file due to the following error: %v", fileExists)
 					continue
 				}
 
@@ -163,4 +164,6 @@ func ClassificationCron() {
 			}
 		}
 	}
+
+	common.Logger.Info("Cron job is finished running at: ", time.Now())
 }
