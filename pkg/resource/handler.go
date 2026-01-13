@@ -9,9 +9,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"firebase.google.com/go/db"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
@@ -181,11 +183,14 @@ func (h *Handler) createUser(c *gin.Context) {
 		CategoriesInformation[folder.Id] = categoryObject
 	}
 
+	userName := "user_" + strings.ReplaceAll(uuid.NewString(), "-", "")
+
 	var firebaseUser = model.FirebaseUser{
 		UserId:     userData.UserId,
 		GmailCode:  gmailToken,
 		GdriveCode: gdriveToken,
 		Categories: CategoriesInformation,
+		UserName:   userName,
 	}
 	common.Logger.Infof("Firebase user initialised: %v", firebaseUser)
 
@@ -226,6 +231,34 @@ func (h *Handler) getUsers(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, users)
+}
+
+// getNames godoc
+// @Summary      Get all user names
+// @Description  Fetches a map of user IDs to user names from Firebase
+// @Tags         users
+// @Produce      json
+// @Success      200  {object}  map[string]string  "Map of userID to userName, e.g., {\"user6ihsvqcxl\": \"Zee430\"}"
+// @Failure      500  {object}  map[string]string  "Error message"
+// @Router       /users/names [get]
+func (h *Handler) getNames(c *gin.Context) {
+	userNames := make(map[string]string)
+
+	users, err := h.FirebaseRespository.GetUserDataList()
+	common.Logger.Infof("Users are fetched here: %v", users)
+
+	if err != nil {
+		common.Logger.Errorf("Error fetching users from firebase repository: %v", err)
+		c.IndentedJSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	for userId, user := range *users {
+		userNames[userId] = *user.UserName
+	}
+
+	common.Logger.Info("Successful fetched users from firebase")
+	c.IndentedJSON(http.StatusOK, userNames)
 }
 
 func (h *Handler) updateToken(c *gin.Context) {

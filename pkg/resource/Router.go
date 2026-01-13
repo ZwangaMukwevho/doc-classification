@@ -21,6 +21,7 @@ func NewRouter(handler Handler) *gin.Engine {
 	router.GET("/gmail/authkey", handler.getGmailAuthKey)
 	router.POST("/user/create", handler.createUser)
 	router.GET("/users", handler.getUsers)
+	router.GET("/names", handler.getNames)
 	router.POST("/token/create", handler.createGmailToken)
 	router.POST("/token/update", handler.updateToken)
 
