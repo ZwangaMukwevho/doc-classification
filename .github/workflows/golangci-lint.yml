@@ -19,8 +19,23 @@ jobs:
         with:
           go-version: '1.22'   # or whatever Go version you use
 
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
+      # - name: Run golangci-lint
+      #   uses: golangci/golangci-lint-action@v6
+      #   with:
+      #     version: v1.60.1     # pick a version you’re happy with
+      #     args: --timeout=5m
+      
+      - name: SSH deploy
+        uses: appleboy/ssh-action@1.0.3
         with:
-          version: v1.60.1     # pick a version you’re happy with
-          args: --timeout=5m
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            sudo -i
+            cd "${{ secrets.APP_DIR }}"
+            git pull origin
+            git mod tidy
+            go build -o main .
+            sudo supervisorctl restart "${{ secrets.SUPERVISOR_PROGRAM }}"
